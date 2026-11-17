@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e ' *)",
+      "Bash(sed -i 's/@aurelia.test`/@aurelia-test.com`/' e2e.js)",
+      "Bash(node e2e.js)",
+      "Bash(npx next *)",
+      "Bash(python -)",
+      "Bash(npx tsc *)"
+    ]
+  }
+}

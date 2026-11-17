@@ -1,0 +1,103 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-maroon: #5a1a1a;
+  --color-maroon-dark: #3d0f0f;
+  --color-gold: #d5aa72;
+  --color-cream: #fdfbf7;
+  --color-ink: #1a1a1a;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-cream);
+  color: var(--color-ink);
+  font-family: var(--font-body), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Hide scrollbar for horizontal scrollers */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Refined focus styles */
+*:focus-visible {
+  outline: 2px solid var(--color-maroon);
+  outline-offset: 2px;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #f7f1e6; }
+::-webkit-scrollbar-thumb { background: #d5aa72; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #b8924f; }
+
+@layer components {
+  .container-custom {
+    @apply max-w-[1440px] mx-auto px-4 md:px-8 lg:px-12;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center px-8 py-3 bg-brand-maroon text-white text-sm font-medium tracking-wide rounded-full hover:bg-brand-maroon-dark transition-colors duration-200;
+  }
+  .btn-outline {
+    @apply inline-flex items-center justify-center px-8 py-3 border border-brand-maroon text-brand-maroon text-sm font-medium tracking-wide rounded-full hover:bg-brand-maroon hover:text-white transition-colors duration-200;
+  }
+  .heading-display {
+    @apply font-display text-brand-ink;
+  }
+}
+
+/* Decorative serif accent */
+.script-italic {
+  font-family: var(--font-display), Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+}
+
+/* ───────────── Brand loader ─────────────
+   Used by components/common/LogoLoader.tsx. The mark's paths total ~120 user
+   units, so the dash pattern is sized to that and cycles to trace the logo.
+   Honours prefers-reduced-motion by falling back to a gentle fade. */
+.aurelia-loader-trace {
+  stroke-dasharray: 120;
+  stroke-dashoffset: 120;
+  animation: aurelia-trace 1.8s ease-in-out infinite;
+}
+
+.aurelia-loader-gem {
+  transform-origin: 20px 14px;
+  animation: aurelia-gem 1.8s ease-in-out infinite;
+}
+
+@keyframes aurelia-trace {
+  0%   { stroke-dashoffset: 120; }
+  55%  { stroke-dashoffset: 0; }
+  75%  { stroke-dashoffset: 0; opacity: 1; }
+  100% { stroke-dashoffset: 0; opacity: 0; }
+}
+
+@keyframes aurelia-gem {
+  0%, 40% { transform: scale(0); opacity: 0; }
+  60%     { transform: scale(1.15); opacity: 1; }
+  75%     { transform: scale(1); opacity: 1; }
+  100%    { transform: scale(1); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aurelia-loader-trace {
+    stroke-dashoffset: 0;
+    animation: aurelia-fade 1.6s ease-in-out infinite;
+  }
+  .aurelia-loader-gem {
+    animation: aurelia-fade 1.6s ease-in-out infinite;
+  }
+  @keyframes aurelia-fade {
+    0%, 100% { opacity: 0.35; }
+    50%      { opacity: 1; }
+  }
+}
