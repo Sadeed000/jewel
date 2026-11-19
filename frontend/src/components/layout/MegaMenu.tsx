@@ -85,7 +85,7 @@ const menuData: Record<string, MenuEntry> = {
       },
     ],
     featured: {
-      image: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=600',
+      image: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009707/ratnapankh/library/photo-1611591437281-460bfbe1220a.jpg',
       title: 'Elan',
       subtitle: 'My World. My Story.',
       href: '/jewellery',
@@ -127,7 +127,7 @@ const menuData: Record<string, MenuEntry> = {
       },
     ],
     featured: {
-      image: 'https://images.unsplash.com/photo-1611652022419-a9419f74343d?w=600',
+      image: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009721/ratnapankh/library/photo-1611652022419-a9419f74343d.jpg',
       title: 'Gold Stories',
       subtitle: 'Heritage in every piece',
       href: '/shop/gold',
@@ -157,7 +157,7 @@ const menuData: Record<string, MenuEntry> = {
       },
     ],
     featured: {
-      image: 'https://images.unsplash.com/photo-1602173574767-37ac01994b2a?w=600',
+      image: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009724/ratnapankh/library/photo-1602173574767-37ac01994b2a.jpg',
       title: 'Festival of Diamonds',
       subtitle: 'A brilliance like no other',
       href: '/shop/diamond',
@@ -258,7 +258,7 @@ const menuData: Record<string, MenuEntry> = {
       },
     ],
     featured: {
-      image: 'https://images.unsplash.com/photo-1591437694631-c2d04bb8b9c5?w=600',
+      image: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795007337/ratnapankh/heroes/gemstone-emerald-necklace-navy.jpg',
       title: 'A World of Colour',
       subtitle: 'Tanzanite, Pearl & Cabochons',
       href: '/shop/gemstone',

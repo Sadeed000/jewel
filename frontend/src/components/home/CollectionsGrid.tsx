@@ -3,19 +3,19 @@ import Image from 'next/image';
 
 const tiles = [
   {
-    image: 'https://images.unsplash.com/photo-1573408301185-9146fe634ad0?w=900',
+    image: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009725/ratnapankh/library/photo-1573408301185-9146fe634ad0.jpg',
     title: 'Sub 50K',
     href: '/shop/under-50k',
     span: 'col-span-2 row-span-2',
   },
   {
-    image: 'https://images.unsplash.com/photo-1535632787350-4e68ef0ac584?w=600',
+    image: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009727/ratnapankh/library/photo-1535632787350-4e68ef0ac584.jpg',
     title: 'Stunning every Ear',
     script: true,
     href: '/shop/earrings',
   },
   {
-    image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=600',
+    image: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009705/ratnapankh/library/photo-1605100804763-247f67b3557e.jpg',
     title: '18Kt Jewellery',
     href: '/shop/gold/18k',
   },

@@ -7,10 +7,45 @@ const customRingService = require('./customRingService');
  * Get or create the user's cart. We lazily create it on first access so
  * a brand-new user always sees a valid cart shape rather than a 404.
  */
+const POPULATE_FIELDS = 'slug name images inStock stockQty';
+
+/**
+ * Coupon engine — the single source of truth for discount maths, shared with
+ * orderService so the amount charged is always recomputed from the final
+ * subtotal. Returns null when the code is unknown or not applicable.
+ *   WELCOME10 = 10% off (max ₹2,000), FLAT500 = ₹500 off (min order ₹5,000).
+ */
+const computeCouponDiscount = (code, subtotal) => {
+  const normalised = String(code || '').toUpperCase().trim();
+  if (normalised === 'WELCOME10') return Math.min(2000, Math.round(subtotal * 0.1));
+  if (normalised === 'FLAT500' && subtotal >= 5000) return 500;
+  return null;
+};
+
+/** Re-derive the stored discount after the cart contents change. */
+const refreshCoupon = (cart) => {
+  if (!cart.couponCode) return;
+  const discount = computeCouponDiscount(cart.couponCode, cart.subtotal);
+  if (discount === null) {
+    cart.couponCode = undefined;
+    cart.couponDiscount = 0;
+  } else {
+    cart.couponDiscount = discount;
+  }
+};
+
 const getOrCreateCart = async (userId) => {
-  let cart = await Cart.findOne({ user: userId }).populate('items.product', 'slug name images inStock stockQty');
+  let cart = await Cart.findOne({ user: userId }).populate('items.product', POPULATE_FIELDS);
   if (!cart) {
-    cart = await Cart.create({ user: userId, items: [] });
+    return Cart.create({ user: userId, items: [] });
+  }
+  /* A product deleted from the catalogue populates as null; such a line can't
+     be bought and would crash anything that reads item.product. Drop it. */
+  const live = cart.items.filter((it) => it.product);
+  if (live.length !== cart.items.length) {
+    cart.items = live;
+    refreshCoupon(cart);
+    await cart.save();
   }
   return cart;
 };
@@ -77,7 +112,11 @@ const addItem = async (userId, { productId, quantity = 1, size, customisation })
       );
 
   if (existing) {
-    existing.quantity = Math.min(20, existing.quantity + quantity);
+    const merged = Math.min(20, existing.quantity + quantity);
+    if (merged > product.stockQty) {
+      throw new AppError(`Only ${product.stockQty} units available.`, 400);
+    }
+    existing.quantity = merged;
   } else {
     cart.items.push({
       product: productId,
@@ -90,8 +129,9 @@ const addItem = async (userId, { productId, quantity = 1, size, customisation })
     });
   }
 
+  refreshCoupon(cart);
   await cart.save();
-  return cart.populate('items.product', 'slug name images inStock stockQty');
+  return cart.populate('items.product', POPULATE_FIELDS);
 };
 
 const updateItem = async (userId, itemId, { quantity }) => {
@@ -99,9 +139,15 @@ const updateItem = async (userId, itemId, { quantity }) => {
   const item = cart.items.id(itemId);
   if (!item) throw new AppError('Cart item not found.', 404);
 
+  // Made-to-order rings aren't drawn from shelf stock.
+  if (!item.customisation?.type && item.product?.stockQty != null && quantity > item.product.stockQty) {
+    throw new AppError(`Only ${item.product.stockQty} units available.`, 400);
+  }
+
   item.quantity = quantity;
+  refreshCoupon(cart);
   await cart.save();
-  return cart.populate('items.product', 'slug name images inStock stockQty');
+  return cart.populate('items.product', POPULATE_FIELDS);
 };
 
 const removeItem = async (userId, itemId) => {
@@ -110,8 +156,9 @@ const removeItem = async (userId, itemId) => {
   if (!item) throw new AppError('Cart item not found.', 404);
 
   item.deleteOne();
+  refreshCoupon(cart);
   await cart.save();
-  return cart.populate('items.product', 'slug name images inStock stockQty');
+  return cart.populate('items.product', POPULATE_FIELDS);
 };
 
 const clearCart = async (userId) => {
@@ -123,27 +170,19 @@ const clearCart = async (userId) => {
   return cart;
 };
 
-/**
- * Stub coupon engine — replace with real coupon model later.
- * For now: WELCOME10 = 10% off (max ₹2,000), FLAT500 = ₹500 off (min order ₹5,000).
- */
 const applyCoupon = async (userId, code) => {
   const cart = await getOrCreateCart(userId);
   const normalised = code.toUpperCase().trim();
 
-  let discount = 0;
-  if (normalised === 'WELCOME10') {
-    discount = Math.min(2000, Math.round(cart.subtotal * 0.1));
-  } else if (normalised === 'FLAT500' && cart.subtotal >= 5000) {
-    discount = 500;
-  } else {
+  const discount = computeCouponDiscount(normalised, cart.subtotal);
+  if (discount === null) {
     throw new AppError('Invalid or inapplicable coupon code.', 400);
   }
 
   cart.couponCode = normalised;
   cart.couponDiscount = discount;
   await cart.save();
-  return cart.populate('items.product', 'slug name images inStock stockQty');
+  return cart.populate('items.product', POPULATE_FIELDS);
 };
 
 const removeCoupon = async (userId) => {
@@ -155,6 +194,7 @@ const removeCoupon = async (userId) => {
 };
 
 module.exports = {
+  computeCouponDiscount,
   getCart,
   addItem,
   updateItem,

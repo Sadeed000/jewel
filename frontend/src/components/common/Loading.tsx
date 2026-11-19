@@ -10,11 +10,13 @@ import LogoLoader from './LogoLoader';
 
 /* ────────── Product card skeleton ────────── */
 export function ProductCardSkeleton() {
+  // Same aspect ratio and spacing as ProductCard, so loaded cards drop into
+  // exactly the same boxes — no layout shift.
   return (
-    <div className="animate-pulse">
-      <div className="aspect-square bg-brand-cream rounded-lg" />
-      <div className="mt-3 h-4 bg-brand-cream rounded w-3/4" />
-      <div className="mt-2 h-4 bg-brand-cream rounded w-1/2" />
+    <div aria-hidden="true">
+      <div className="skeleton aspect-square rounded-card" />
+      <div className="skeleton mt-3.5 h-4 w-3/4" />
+      <div className="skeleton mt-2 h-4 w-1/3" />
     </div>
   );
 }
@@ -22,7 +24,11 @@ export function ProductCardSkeleton() {
 /* ────────── Product grid skeleton ────────── */
 export function ProductGridSkeleton({ count = 6 }: { count?: number }) {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5">
+    <div
+      className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8 md:gap-x-6 md:gap-y-10"
+      role="status"
+      aria-label="Loading products"
+    >
       {Array.from({ length: count }).map((_, i) => (
         <ProductCardSkeleton key={i} />
       ))}
@@ -61,10 +67,10 @@ export function EmptyState({
 }) {
   return (
     <div className="py-16 text-center">
-      <div className="w-20 h-20 mx-auto rounded-full bg-brand-cream grid place-items-center text-3xl text-brand-gold-dark mb-4">
+      <div className="w-20 h-20 mx-auto rounded-full bg-white shadow-card ring-1 ring-brand-line grid place-items-center text-3xl text-brand-gold-dark mb-6">
         {icon}
       </div>
-      <p className="font-display text-2xl text-brand-ink">{title}</p>
+      <p className="font-display text-3xl text-brand-ink">{title}</p>
       {description && <p className="text-sm text-brand-muted mt-2 max-w-md mx-auto">{description}</p>}
       {action && <div className="mt-6">{action}</div>}
     </div>

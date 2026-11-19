@@ -2,9 +2,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 
 const trends = [
-  { image: 'https://images.unsplash.com/photo-1602173574767-37ac01994b2a?w=600', title: 'Auspicious Occasion', href: '/shop/auspicious' },
-  { image: 'https://images.unsplash.com/photo-1611652022419-a9419f74343d?w=600', title: 'Gifting Jewellery', href: '/shop/gifting' },
-  { image: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=600', title: 'Akshaya Tritiya', href: '/shop/akshaya-tritiya' },
+  { image: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009724/ratnapankh/library/photo-1602173574767-37ac01994b2a.jpg', title: 'Auspicious Occasion', href: '/shop/auspicious' },
+  { image: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009721/ratnapankh/library/photo-1611652022419-a9419f74343d.jpg', title: 'Gifting Jewellery', href: '/shop/gifting' },
+  { image: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009707/ratnapankh/library/photo-1611591437281-460bfbe1220a.jpg', title: 'Akshaya Tritiya', href: '/shop/akshaya-tritiya' },
 ];
 
 export default function TrendingNow() {

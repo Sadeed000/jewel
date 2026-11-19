@@ -4,6 +4,7 @@ const BlogPost = require('../models/BlogPost');
 const SiteSettings = require('../models/SiteSettings');
 const Category = require('../models/Category');
 const AppError = require('../utils/AppError');
+const { sanitizeArticle, stripTags } = require('../utils/sanitizeArticle');
 const { parsePagination, paginate } = require('../utils/pagination');
 
 /* ───────────── Banners ───────────── */
@@ -60,36 +61,147 @@ const deleteTestimonial = async (id) => {
 
 /* ───────────── Blog ───────────── */
 
+/** The one definition of "publicly visible". Drafts never match it. */
+const publicBlogFilter = () => ({ isPublished: true, publishedAt: { $ne: null, $lte: new Date() } });
+
+/** Fields the editor may never set directly. */
+const BLOG_READONLY = ['_id', 'viewCount', 'previousSlugs', 'createdAt', 'updatedAt', 'readTime'];
+
+const cleanBlogPayload = (payload) => {
+  const data = { ...payload };
+  BLOG_READONLY.forEach((k) => delete data[k]);
+  ['title', 'excerpt', 'category', 'coverImageAlt', 'targetKeyword'].forEach((k) => {
+    if (data[k] !== undefined) data[k] = stripTags(data[k]);
+  });
+  if (data.seo) {
+    data.seo = { metaTitle: stripTags(data.seo.metaTitle), metaDescription: stripTags(data.seo.metaDescription) };
+  }
+  if (data.content !== undefined) data.content = sanitizeArticle(data.content);
+  if (data.slug !== undefined) data.slug = BlogPost.toSlug(data.slug);
+  if (Array.isArray(data.relatedProducts)) {
+    data.relatedProducts = [...new Set(data.relatedProducts.map((s) => BlogPost.toSlug(s)).filter(Boolean))];
+  }
+  if (Array.isArray(data.relatedCollections)) {
+    // Internal paths only, so they follow the storefront to any domain.
+    data.relatedCollections = data.relatedCollections
+      .filter((c) => c && c.label && typeof c.href === 'string' && c.href.startsWith('/') && !c.href.startsWith('//'))
+      .map((c) => ({ label: stripTags(c.label), href: c.href.trim() }));
+  }
+  return data;
+};
+
+/** A slug may belong to only one post — current or previous. */
+const assertSlugFree = async (slug, exceptId) => {
+  const clash = await BlogPost.exists({
+    _id: { $ne: exceptId },
+    $or: [{ slug }, { previousSlugs: slug }],
+  });
+  if (clash) throw new AppError(`The URL slug "${slug}" is already used by another article.`, 409);
+};
+
 const listBlogPosts = async (query) => {
   const { page, limit, skip, sort } = parsePagination(query, { sort: '-publishedAt' });
-  const filter = { isPublished: true };
+  const filter = publicBlogFilter();
   if (query.category) filter.category = query.category;
-  if (query.tag) filter.tags = query.tag.toLowerCase();
-  if (query.q) filter.$text = { $search: query.q };
+  if (query.tag) filter.tags = String(query.tag).toLowerCase();
+  if (query.q) filter.$text = { $search: String(query.q) };
 
   const [items, total] = await Promise.all([
-    BlogPost.find(filter).select('-content').sort(sort).skip(skip).limit(limit).lean(),
+    BlogPost.find(filter)
+      .select('-content -targetKeyword -viewCount')
+      .sort(sort)
+      .skip(skip)
+      .limit(limit)
+      .lean(),
     BlogPost.countDocuments(filter),
   ]);
   return paginate({ items, total, page, limit });
 };
 
+/**
+ * Public read. A request for a slug the post used before resolves to the post
+ * with its current slug; the storefront turns that mismatch into a redirect.
+ */
 const getBlogPostBySlug = async (slug) => {
-  // Atomically increment view count and return the updated doc.
-  const post = await BlogPost.findOneAndUpdate(
-    { slug, isPublished: true },
-    { $inc: { viewCount: 1 } },
-    { new: true }
-  ).lean();
+  const select = '-targetKeyword -viewCount';
+  const post =
+    (await BlogPost.findOne({ ...publicBlogFilter(), slug }).select(select).lean()) ||
+    (await BlogPost.findOne({ ...publicBlogFilter(), previousSlugs: slug }).select(select).lean());
   if (!post) throw new AppError('Post not found.', 404);
   return post;
 };
 
-const createBlogPost = (payload) => BlogPost.create(payload);
+/**
+ * Where an old URL slug should permanently redirect to, or null.
+ * Used by the storefront middleware. A slug that is some item's *current*
+ * slug never redirects; unpublished posts never redirect (they 404).
+ */
+const resolveSlugRedirect = async (type, slug) => {
+  const clean = String(slug || '').toLowerCase().slice(0, 220);
+  if (!clean) return null;
+  if (type === 'product') {
+    const Product = require('../models/Product');
+    if (await Product.exists({ slug: clean })) return null;
+    const p = await Product.findOne({ previousSlugs: clean }).select('slug').lean();
+    return p?.slug ?? null;
+  }
+  if (type === 'blog') {
+    if (await BlogPost.exists({ slug: clean })) return null;
+    const post = await BlogPost.findOne({ ...publicBlogFilter(), previousSlugs: clean }).select('slug').lean();
+    return post?.slug ?? null;
+  }
+  return null;
+};
+
+/* Admin — sees drafts. */
+
+const adminListBlogPosts = async (query) => {
+  const { page, limit, skip } = parsePagination(query, { sort: '-updatedAt' });
+  const filter = {};
+  if (query.status === 'published') filter.isPublished = true;
+  if (query.status === 'draft') filter.isPublished = false;
+  if (query.q) {
+    const term = String(query.q).trim().slice(0, 80).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    if (term) filter.$or = [{ title: { $regex: term, $options: 'i' } }, { slug: { $regex: term, $options: 'i' } }];
+  }
+  const [items, total] = await Promise.all([
+    BlogPost.find(filter).select('-content').sort('-updatedAt').skip(skip).limit(limit).lean(),
+    BlogPost.countDocuments(filter),
+  ]);
+  return paginate({ items, total, page, limit });
+};
+
+const adminGetBlogPost = async (id) => {
+  const post = await BlogPost.findById(id).lean();
+  if (!post) throw new AppError('Post not found.', 404);
+  return post;
+};
+
+const createBlogPost = async (payload) => {
+  const data = cleanBlogPayload(payload);
+  data.slug = BlogPost.toSlug(data.slug || data.title);
+  if (!data.slug) throw new AppError('Please give the article a title or slug.', 400);
+  await assertSlugFree(data.slug);
+  return BlogPost.create(data);
+};
 
 const updateBlogPost = async (id, payload) => {
-  const post = await BlogPost.findByIdAndUpdate(id, payload, { new: true, runValidators: true });
+  const post = await BlogPost.findById(id);
   if (!post) throw new AppError('Post not found.', 404);
+  const data = cleanBlogPayload(payload);
+
+  if (data.slug !== undefined) {
+    if (!data.slug) throw new AppError('The URL slug cannot be empty.', 400);
+    if (data.slug !== post.slug) {
+      await assertSlugFree(data.slug, post._id);
+      // Only a URL that was ever public needs to keep working.
+      if (post.publishedAt) post.previousSlugs.addToSet(post.slug);
+      post.previousSlugs.pull(data.slug);
+    }
+  }
+
+  post.set(data);
+  await post.save();
   return post;
 };
 
@@ -156,6 +268,7 @@ module.exports = {
   listTestimonials, createTestimonial, updateTestimonial, deleteTestimonial,
   // blog
   listBlogPosts, getBlogPostBySlug, createBlogPost, updateBlogPost, deleteBlogPost,
+  adminListBlogPosts, adminGetBlogPost, resolveSlugRedirect,
   // settings
   getSiteSettings, updateSiteSettings,
   // categories

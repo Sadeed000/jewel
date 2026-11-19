@@ -29,20 +29,39 @@ const testimonial = Joi.object({
   sortOrder: Joi.number().integer(),
 });
 
+// Image URLs may be absolute (CDN / Cloudinary) or API-relative ("/uploads/…").
+const imageUrl = Joi.string().uri({ allowRelative: true }).max(1000);
+
 const blogPost = Joi.object({
-  title: Joi.string().min(2).max(200).required(),
-  slug: Joi.string().lowercase().max(220),
-  excerpt: Joi.string().min(10).max(500).required(),
+  title: Joi.string().trim().min(2).max(200).required(),
+  slug: Joi.string().trim().lowercase().max(220).allow(''),
+  excerpt: Joi.string().trim().min(10).max(500).required(),
   content: Joi.string().min(20).required(),
-  coverImage: Joi.string().uri().required(),
-  category: Joi.string().max(100).allow('', null),
-  tags: Joi.array().items(Joi.string().max(40)),
-  author: Joi.object({ name: Joi.string().max(100), avatar: Joi.string().uri().allow('', null) }),
-  readTime: Joi.string().max(20),
+  coverImage: imageUrl.allow('', null),
+  coverImageAlt: Joi.string().trim().max(200).allow('', null),
+  category: Joi.string().trim().max(100).allow('', null),
+  tags: Joi.array().items(Joi.string().max(40)).max(20),
+  author: Joi.object({ name: Joi.string().trim().max(100).allow(''), avatar: imageUrl.allow('', null) }),
   isPublished: Joi.boolean(),
-  publishedAt: Joi.date(),
-  seo: Joi.object({ metaTitle: Joi.string().max(200), metaDescription: Joi.string().max(500) }),
+  publishedAt: Joi.date().allow(null),
+  seo: Joi.object({
+    metaTitle: Joi.string().trim().max(200).allow('', null),
+    metaDescription: Joi.string().trim().max(500).allow('', null),
+  }),
+  targetKeyword: Joi.string().trim().max(120).allow('', null),
+  relatedProducts: Joi.array().items(Joi.string().trim().max(220)).max(12),
+  relatedCollections: Joi.array()
+    .items(Joi.object({
+      label: Joi.string().trim().max(80).required(),
+      // Internal paths only, e.g. /shop/silver — never a full URL.
+      href: Joi.string().trim().pattern(/^\/(?!\/)[^\s]*$/).max(300).required()
+        .messages({ 'string.pattern.base': 'Collection links must be site paths like /shop/silver' }),
+    }))
+    .max(6),
 });
+
+// Updates may send any subset (e.g. just { isPublished: false }).
+const blogPostUpdate = blogPost.fork(['title', 'excerpt', 'content'], (s) => s.optional());
 
 const siteSettings = Joi.object({
   siteName: Joi.string().max(100),
@@ -101,4 +120,4 @@ const category = Joi.object({
   showInMegaMenu: Joi.boolean(),
 });
 
-module.exports = { banner, testimonial, blogPost, siteSettings, category };
+module.exports = { banner, testimonial, blogPost, blogPostUpdate, siteSettings, category };

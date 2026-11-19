@@ -34,33 +34,34 @@ export default function Modal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 sm:p-6">
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-3 sm:p-6">
+      <div className="backdrop-in fixed inset-0 bg-[#3a2418]/25 backdrop-blur-[4px]" onClick={onClose} />
 
       <div
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="relative my-4 w-full max-w-4xl rounded-2xl bg-white shadow-2xl"
+        className="dialog-in relative my-4 w-full max-w-4xl overflow-hidden rounded-[20px] bg-admin-surface shadow-[0_32px_80px_-20px_rgba(122,82,40,0.45)] ring-1 ring-admin-gold/25"
       >
-        <header className="sticky top-0 z-10 flex items-start gap-4 rounded-t-2xl border-b border-slate-200 bg-white px-6 py-4">
+        <div className="h-1 w-full bg-gradient-to-r from-admin-gold-light via-admin-gold to-admin-maroon/70" aria-hidden="true" />
+        <header className="sticky top-0 z-10 flex items-start gap-4 border-b border-admin-line bg-admin-surface/95 px-6 py-5 backdrop-blur">
           <div>
-            <h3 className="font-display text-2xl text-brand-ink">{title}</h3>
-            {subtitle && <p className="mt-0.5 text-sm text-brand-muted">{subtitle}</p>}
+            <h3 className="text-xl font-bold tracking-[-0.02em] text-admin-ink">{title}</h3>
+            {subtitle && <p className="mt-0.5 text-sm text-admin-muted">{subtitle}</p>}
           </div>
           <button
             onClick={onClose}
             aria-label="Close"
-            className="ml-auto rounded-lg p-2 text-brand-muted hover:bg-slate-100 hover:text-brand-ink"
+            className="ml-auto grid h-9 w-9 place-items-center rounded-xl text-admin-muted transition-colors hover:bg-admin-gold-soft hover:text-admin-maroon"
           >
             <X size={18} />
           </button>
         </header>
 
-        <div className="px-6 py-5">{children}</div>
+        <div className="px-6 py-6">{children}</div>
 
         {footer && (
-          <footer className="sticky bottom-0 flex justify-end gap-3 rounded-b-2xl border-t border-slate-200 bg-white px-6 py-4">
+          <footer className="sticky bottom-0 flex justify-end gap-2.5 border-t border-admin-line bg-admin-subtle/95 px-6 py-4 backdrop-blur">
             {footer}
           </footer>
         )}

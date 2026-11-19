@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useBanners } from '@/hooks/useSettings';
 import type { Banner } from '@/lib/types';
+import { hero } from '@/lib/imagery';
 
 /**
  * Static fallback used while banners load and as a graceful degradation
@@ -15,41 +16,43 @@ import type { Banner } from '@/lib/types';
 const fallbackSlides: Banner[] = [
   {
     _id: 'fallback-1',
-    image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=1800&h=600&fit=crop',
-    eyebrow: 'A TATA Heritage',
-    title: "Your old gold,\nIndia's new strength.",
-    subtitle: 'Help India reduce gold imports by exchanging your old gold for new jewellery with Aurelia.',
-    ctaLabel: 'Explore Now',
-    ctaHref: '/exchange',
+    image: hero('jewelleryRoseEmeraldSet'),
+    eyebrow: 'The Signature Edit',
+    title: 'Fine Jewellery,\nThoughtfully Made',
+    subtitle: 'Rings, earrings and pendants with colour, sparkle and quiet detail — made to be worn every day.',
+    ctaLabel: 'Shop All Jewellery',
+    ctaHref: '/shop/jewellery',
     placement: 'home-hero',
     align: 'left',
   },
   {
     _id: 'fallback-2',
-    image: 'https://images.unsplash.com/photo-1611652022419-a9419f74343d?w=1800&h=600&fit=crop',
-    eyebrow: 'New Collection',
-    title: 'A Celebration of\nNatural Gemstones',
-    subtitle: 'Tanzanite, Pearl, Cabochon and more — discover hues that tell your story.',
-    ctaLabel: 'Explore Collection',
-    ctaHref: '/gemstone',
+    image: hero('ringsBurgundyHalo'),
+    eyebrow: 'The Ring Edit',
+    title: 'A Ring for\nEvery Promise',
+    subtitle: 'Halo, solitaire-style and everyday bands — in Indian sizes, with a size finder to get it right.',
+    ctaLabel: 'Shop Rings',
+    ctaHref: '/rings',
     placement: 'home-hero',
     align: 'left',
   },
   {
     _id: 'fallback-3',
-    image: 'https://images.unsplash.com/photo-1583292650898-7d22cd27ca6f?w=1800&h=600&fit=crop',
-    eyebrow: 'Bridal',
-    title: 'Rivaah —\nThe Wedding Edit',
-    subtitle: 'Heirlooms in the making for your most precious day.',
-    ctaLabel: 'Shop Bridal',
-    ctaHref: '/wedding',
+    image: hero('gemstoneEmeraldModel'),
+    eyebrow: 'The Colour Edit',
+    title: 'Gemstones That\nTell Your Story',
+    subtitle: 'Emerald greens, deep blues and soft pastels — colour you will reach for again and again.',
+    ctaLabel: 'Explore Gemstones',
+    ctaHref: '/gemstone',
     placement: 'home-hero',
     align: 'left',
   },
 ];
 
-export default function HeroCarousel() {
-  const { data: banners } = useBanners('home-hero');
+export default function HeroCarousel({ initialBanners }: { initialBanners?: Banner[] } = {}) {
+  // Seeded by the server so the first slide is in the initial HTML (it's the
+  // page's LCP image); the client query only refreshes it afterwards.
+  const { data: banners } = useBanners('home-hero', initialBanners);
   // Use fetched banners when available; fall back to static otherwise so
   // the carousel always has slides to show. Identical visual output.
   const slides = banners && banners.length > 0 ? banners : fallbackSlides;
@@ -80,6 +83,7 @@ export default function HeroCarousel() {
             alt={slide.title}
             fill
             priority={i === 0}
+            quality={85}
             className="object-cover"
             sizes="100vw"
           />
@@ -91,9 +95,11 @@ export default function HeroCarousel() {
                   {slide.eyebrow}
                 </p>
               )}
-              <h1 className="font-display text-4xl md:text-5xl lg:text-6xl leading-tight whitespace-pre-line">
+              {/* h2: every slide is in the DOM, and the page's single H1 lives
+                  in app/(storefront)/page.tsx. */}
+              <h2 className="font-display text-4xl md:text-5xl lg:text-6xl leading-tight whitespace-pre-line">
                 {slide.title}
-              </h1>
+              </h2>
               {slide.subtitle && <p className="mt-4 text-sm md:text-base opacity-90 max-w-md">{slide.subtitle}</p>}
               {slide.ctaLabel && (
                 <Link

@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { queryKeys } from '@/lib/queryKeys';
+import { purgeStorefront } from './useAdminBlog';
 import type { Category, Order, Paginated, Product, User } from '@/lib/types';
 
 export function useAdminDashboard() {
@@ -75,7 +76,10 @@ export function useCreateProduct() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (payload: Partial<Product>) => api.post<{ product: Product }>('/products', payload).then((d) => d.product),
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.products.list() }),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: queryKeys.products.list() });
+      purgeStorefront('products', vars);
+    },
   });
 }
 
@@ -84,7 +88,10 @@ export function useUpdateProduct() {
   return useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: Partial<Product> }) =>
       api.patch<{ product: Product }>(`/products/${id}`, payload).then((d) => d.product),
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.products.list() }),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: queryKeys.products.list() });
+      purgeStorefront('products', vars);
+    },
   });
 }
 
@@ -92,7 +99,10 @@ export function useDeleteProduct() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.delete<null>(`/products/${id}`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.products.list() }),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: queryKeys.products.list() });
+      purgeStorefront('products', vars);
+    },
   });
 }
 

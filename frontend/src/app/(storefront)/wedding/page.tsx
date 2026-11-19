@@ -1,5 +1,6 @@
 
 import type { Metadata } from 'next';
+import { pageMetadata } from '@/lib/seo';
 import Image from 'next/image';
 import Link from 'next/link';
 import Breadcrumb from '@/components/common/Breadcrumb';
@@ -8,19 +9,22 @@ import ProductCard from '@/components/product/ProductCard';
 import BrandPromises from '@/components/shop/BrandPromises';
 import CollectionStory from '@/components/shop/CollectionStory';
 import { fetchProducts } from '@/lib/server-api';
+import { asset, tile } from '@/lib/imagery';
 
-export const metadata: Metadata = {
-  title: 'Wedding Jewellery — Bridal Sets, Mangalsutras & More',
-  description: 'A bridal edit crafted for the most precious day of your life. Mangalsutras, vaddanams, kalires, and complete bridal sets.',
-};
+export const metadata: Metadata = pageMetadata({
+  title: "Wedding & Bridal Jewellery Online in India",
+  description:
+    "Bridal and wedding jewellery for the big day and the celebrations around it, with prices in INR and secure checkout.",
+  path: '/wedding',
+});
 
 const bridalCategories = [
-  { label: 'Bridal Sets', icon: '◈', image: 'https://images.unsplash.com/photo-1583292650898-7d22cd27ca6f?w=600&auto=format&fit=crop' },
-  { label: 'Mangalsutras', icon: '❀', image: 'https://images.unsplash.com/photo-1602751584552-8ba73aad10e1?w=600&auto=format&fit=crop' },
-  { label: 'Vaddanam', icon: '◯', image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=600&auto=format&fit=crop' },
-  { label: 'Kalire', icon: '✦', image: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=600&auto=format&fit=crop' },
-  { label: 'Polki', icon: '◆', image: 'https://images.unsplash.com/photo-1611652022419-a9419f74343d?w=600&auto=format&fit=crop' },
-  { label: 'For the Groom', icon: '◇', image: 'https://images.unsplash.com/photo-1573408301185-9146fe634ad0?w=600&auto=format&fit=crop' },
+  { label: 'Bridal Sets', icon: '◈', image: tile('weddingKundanSet', '1:1', 700) },
+  { label: 'Mangalsutras', icon: '❀', image: tile('weddingBrideGold', '1:1', 700) },
+  { label: 'Vaddanam', icon: '◯', image: tile('weddingBrideRed', '1:1', 700) },
+  { label: 'Kalire', icon: '✦', image: tile('weddingMehendiKundan', '1:1', 700) },
+  { label: 'Polki', icon: '◆', image: tile('jewelleryRoseEmeraldSet', '1:1', 700) },
+  { label: 'For the Groom', icon: '◇', image: tile('silverBandsLeaf', '1:1', 700) },
 ];
 
 export default async function WeddingPage() {
@@ -31,18 +35,24 @@ export default async function WeddingPage() {
       {/* Hero — bridal */}
       <section className="relative h-[420px] md:h-[560px] overflow-hidden">
         <Image
-          src="https://images.unsplash.com/photo-1583292650898-7d22cd27ca6f?w=1800&auto=format&fit=crop"
-          alt="The Wedding Edit"
+          // Background extended with generative fill: the full bride and her
+          // jewellery sit on the right, the headline on the dark left. Phones
+          // anchor the image right so she stays in view.
+          src={asset('weddingBrideRedWide')}
+          alt="Bride in a red lehenga wearing a kundan necklace, maang tikka and nath"
+          quality={85}
           fill
           priority
-          className="object-cover"
+          className="object-cover object-[85%_center] md:object-center"
           sizes="100vw"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-brand-maroon-dark/70 via-brand-maroon-dark/30 to-transparent" />
-        <div className="container-custom relative h-full flex items-center">
+        {/* Phones: a bottom veil so text reads over the bride. Desktop: the
+            left of the photo is already dark; a light gradient deepens it. */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent md:bg-gradient-to-r md:from-black/50 md:via-black/10 md:to-transparent" />
+        <div className="container-custom relative h-full flex items-end pb-10 md:items-center md:pb-0">
           <div className="text-white max-w-xl">
-            <p className="font-display italic text-2xl md:text-3xl text-brand-gold-light">Rivaah</p>
-            <p className="text-[10px] tracking-[0.5em] uppercase opacity-90 mt-1">The Wedding Edit</p>
+            <p className="font-display italic text-2xl md:text-3xl text-brand-gold-light">The Bridal Edit</p>
+            <p className="text-[10px] tracking-[0.5em] uppercase opacity-90 mt-1">Ratnapankh Wedding Collection</p>
             <h1 className="font-display text-4xl md:text-6xl mt-4 leading-tight">
               Heirlooms in<br/>
               the making.
@@ -73,7 +83,7 @@ export default async function WeddingPage() {
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-5">
           {bridalCategories.map((c) => (
-            <Link key={c.label} href="#" className="group block">
+            <Link key={c.label} href="/shop/jewellery?occasion=wedding" className="group block">
               <div className="relative aspect-square rounded-lg overflow-hidden bg-brand-cream">
                 <Image src={c.image} alt={c.label} fill className="object-cover group-hover:scale-105 transition-transform duration-700" sizes="(max-width: 768px) 50vw, 16vw" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
@@ -93,12 +103,12 @@ export default async function WeddingPage() {
             <p className="text-sm md:text-base text-white/85 mt-4 leading-relaxed">
               Uncut, unhurried, untouched by time. Polki diamonds have adorned royalty for centuries — now reimagined for the bride who carries her past with pride.
             </p>
-            <Link href="#" className="inline-block mt-7 px-7 py-3 bg-brand-gold text-brand-maroon-dark text-xs font-semibold tracking-widest uppercase rounded-sm hover:bg-brand-gold-light transition-colors">
+            <Link href="/shop/jewellery?occasion=wedding" className="inline-block mt-7 px-7 py-3 bg-brand-gold text-brand-maroon-dark text-xs font-semibold tracking-widest uppercase rounded-sm hover:bg-brand-gold-light transition-colors">
               Explore Polki
             </Link>
           </div>
           <div className="relative aspect-[4/5] rounded-lg overflow-hidden">
-            <Image src="https://images.unsplash.com/photo-1583292650898-7d22cd27ca6f?w=900&auto=format&fit=crop" alt="Polki" fill className="object-cover" sizes="(max-width: 768px) 100vw, 50vw" />
+            <Image src={tile('weddingKundanSet', '4:5', 1400)} alt="Kundan necklace with matching jhumka earrings" fill className="object-cover" sizes="(max-width: 768px) 100vw, 50vw" />
           </div>
         </div>
       </section>
@@ -148,7 +158,7 @@ export default async function WeddingPage() {
                 </li>
               ))}
             </ul>
-            <Link href="#" className="inline-block mt-6 text-xs font-semibold tracking-widest uppercase text-brand-maroon hover:underline">
+            <Link href="/blog" className="inline-block mt-6 text-xs font-semibold tracking-widest uppercase text-brand-maroon hover:underline">
               Get the Full Checklist →
             </Link>
           </div>
@@ -163,7 +173,7 @@ export default async function WeddingPage() {
         body="The pieces you wear today will outlive every wedding photograph. Crafted with care, blessed with intent — they belong to your story."
         ctaLabel="Visit a Boutique"
         ctaHref="/store-locator"
-        bgImage="https://images.unsplash.com/photo-1583292650898-7d22cd27ca6f?w=1800&auto=format&fit=crop"
+        bgImage="https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009728/ratnapankh/library/photo-1583292650898-7d22cd27ca6f.jpg"
       />
     </div>
   );

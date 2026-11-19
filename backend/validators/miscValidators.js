@@ -33,7 +33,7 @@ const productCreate = Joi.object({
   stockQty: Joi.number().integer().min(0),
   collection: Joi.string().max(100),
   occasion: Joi.string().valid('wedding', 'daily-wear', 'festive', 'office', 'party', 'gifting'),
-  gemstone: Joi.string().valid('emerald', 'ruby', 'sapphire', 'tanzanite', 'pearl', 'coral', 'none'),
+  gemstone: Joi.string().valid('emerald', 'ruby', 'sapphire', 'tanzanite', 'pearl', 'coral', 'opal', 'moissanite', 'none'),
   gender: Joi.string().valid('women', 'men', 'kids', 'unisex'),
 
   // Gemstone provenance — optional, and only meaningful on stone-set pieces.
@@ -72,7 +72,7 @@ const productListQuery = Joi.object({
   category: Joi.string().valid('gold', 'diamond', 'gemstone', 'platinum', 'silver'),
   type: Joi.string().valid('rings', 'earrings', 'pendants', 'necklaces', 'chains', 'bracelets', 'mangalsutra', 'bangles', 'nose-pin'),
   occasion: Joi.string().valid('wedding', 'daily-wear', 'festive', 'office', 'party', 'gifting'),
-  gemstone: Joi.string().valid('emerald', 'ruby', 'sapphire', 'tanzanite', 'pearl', 'coral', 'none'),
+  gemstone: Joi.string().valid('emerald', 'ruby', 'sapphire', 'tanzanite', 'pearl', 'coral', 'opal', 'moissanite', 'none'),
   gender: Joi.string().valid('women', 'men', 'kids', 'unisex'),
   minPrice: Joi.number().min(0),
   maxPrice: Joi.number().min(0),
@@ -112,7 +112,14 @@ const digitalGoldEnrol = Joi.object({
   tenureMonths: Joi.number().integer().min(6).max(11).required(),
 });
 
+// Public calculator: same bounds as enrolment so the slider can't be fed junk.
+const digitalGoldCalculate = Joi.object({
+  monthlyAmount: Joi.number().min(500).max(50000).required(),
+  tenureMonths: Joi.number().integer().min(6).max(11).required(),
+});
+
 module.exports = {
+  digitalGoldCalculate,
   productCreate,
   productUpdate,
   productListQuery,

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Breadcrumb from '@/components/common/Breadcrumb';
 import PageHeroBanner from '@/components/shop/PageHeroBanner';
 import QuickFilters from '@/components/shop/QuickFilters';
-import ProductCard from '@/components/product/ProductCard';
+import ProductGrid from '@/components/product/ProductGrid';
 import ShopByOccasion from '@/components/shop/ShopByOccasion';
 import { useProducts } from '@/hooks/useProducts';
 import { ProductGridSkeleton, EmptyState } from '@/components/common/Loading';
@@ -70,11 +70,7 @@ export default function CategoryPage({
             action={<Link href="/jewellery" className="btn-primary">Browse all jewellery</Link>}
           />
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5">
-            {items.map((p) => (
-              <ProductCard key={p._id} product={p} />
-            ))}
-          </div>
+          <ProductGrid products={items} animationKey={filter} />
         )}
       </div>
 

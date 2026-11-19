@@ -8,6 +8,7 @@ import ProductCard from '@/components/product/ProductCard';
 import { useProducts } from '@/hooks/useProducts';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { ProductGridSkeleton } from '@/components/common/Loading';
+import VoiceSearchButton from '@/components/search/VoiceSearch';
 
 function SearchResults() {
   const router = useRouter();
@@ -17,6 +18,14 @@ function SearchResults() {
   const [query, setQuery] = useState(initialQuery);
   // Debounced so typing doesn't issue a request per keystroke.
   const debouncedQuery = useDebouncedValue(query, 350);
+
+  // A search started elsewhere (header box, voice search) while already on
+  // this page changes ?q= without remounting — adopt it. Our own URL updates
+  // below always equal debouncedQuery, so they're ignored here.
+  useEffect(() => {
+    if (initialQuery !== debouncedQuery) setQuery(initialQuery);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialQuery]);
 
   // Keep the URL in sync so results are shareable and the back button works,
   // without pushing a history entry for every character typed.
@@ -47,9 +56,13 @@ function SearchResults() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search for rings, earrings, gemstones..."
-              className="w-full pl-14 pr-4 py-4 bg-white border border-brand-cream-dark rounded-full text-base outline-none focus:border-brand-gold"
+              aria-label="Search jewellery"
+              className="w-full pl-14 pr-16 py-4 bg-white border border-brand-cream-dark rounded-full text-base outline-none focus:border-brand-gold"
               autoFocus
             />
+            <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
+              <VoiceSearchButton onResult={setQuery} className="h-11 w-11 hover:bg-brand-cream" size={20} />
+            </div>
           </div>
         </div>
 

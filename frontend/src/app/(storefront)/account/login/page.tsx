@@ -61,7 +61,7 @@ export default function LoginPage() {
       {/* Visual */}
       <div className="relative hidden md:block">
         <Image
-          src="https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=1200"
+          src="https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009707/ratnapankh/library/photo-1611591437281-460bfbe1220a.jpg"
           alt=""
           fill
           className="object-cover"

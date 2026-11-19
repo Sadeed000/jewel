@@ -53,7 +53,17 @@ const failPayment = Joi.object({
   reason: Joi.string().max(300).allow('', null),
 });
 
+/* ───────────── Admin ───────────── */
+
+const updateStatus = Joi.object({
+  status: Joi.string()
+    .valid('confirmed', 'processing', 'shipped', 'out-for-delivery', 'delivered', 'cancelled', 'returned')
+    .required(),
+  note: Joi.string().max(300).allow('', null),
+});
+
 module.exports = {
+  updateStatus,
   createOrder,
   cancelOrder,
   createPaymentSession,

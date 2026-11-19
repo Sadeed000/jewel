@@ -18,11 +18,19 @@ router.post('/testimonials', protect, restrictTo('admin'), validate(v.testimonia
 router.patch('/testimonials/:id', protect, restrictTo('admin'), validate(v.testimonial), c.updateTestimonial);
 router.delete('/testimonials/:id', protect, restrictTo('admin'), c.deleteTestimonial);
 
+/* ───────────── Slug redirects (storefront middleware) ─────────────
+   GET /content/redirect?type=product|blog&slug=old-slug → { to: 'new-slug' | null } */
+router.get('/redirect', c.resolveSlugRedirect);
+
 /* ───────────── Blog ───────────── */
+// Admin routes are declared first so "admin" is never read as a post slug.
+// They are the only way to read a draft.
+router.get('/blog/admin/posts', protect, restrictTo('admin'), c.adminListBlogPosts);
+router.get('/blog/admin/posts/:id', protect, restrictTo('admin'), c.adminGetBlogPost);
 router.get('/blog', c.listBlogPosts);
 router.get('/blog/:slug', c.getBlogPostBySlug);
 router.post('/blog', protect, restrictTo('admin'), validate(v.blogPost), c.createBlogPost);
-router.patch('/blog/:id', protect, restrictTo('admin'), validate(v.blogPost), c.updateBlogPost);
+router.patch('/blog/:id', protect, restrictTo('admin'), validate(v.blogPostUpdate), c.updateBlogPost);
 router.delete('/blog/:id', protect, restrictTo('admin'), c.deleteBlogPost);
 
 /* ───────────── Site settings (singleton) ───────────── */

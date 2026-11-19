@@ -16,7 +16,7 @@ export default function CollectionStory({
   body,
   ctaLabel = 'Book An Appointment',
   ctaHref = '/store-locator',
-  bgImage = 'https://images.unsplash.com/photo-1591437694631-c2d04bb8b9c5?w=1800&auto=format&fit=crop',
+  bgImage = 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795007337/ratnapankh/heroes/gemstone-emerald-necklace-navy.jpg',
 }: Props) {
   return (
     <section className="container-custom py-16">

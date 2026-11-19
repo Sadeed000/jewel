@@ -5,6 +5,10 @@ const productSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
     slug: { type: String, required: true, unique: true, lowercase: true, index: true },
+    /* Slugs this product was previously published under. The storefront
+       permanently redirects them to the current slug, so a rename never
+       breaks an indexed URL or an inbound link. */
+    previousSlugs: { type: [String], default: [], index: true },
     sku: { type: String, unique: true, sparse: true, uppercase: true },
 
     category: {
@@ -75,7 +79,7 @@ const productSchema = new mongoose.Schema(
     },
     gemstone: {
       type: String,
-      enum: ['emerald', 'ruby', 'sapphire', 'tanzanite', 'pearl', 'coral', 'none'],
+      enum: ['emerald', 'ruby', 'sapphire', 'tanzanite', 'pearl', 'coral', 'opal', 'moissanite', 'none'],
     },
     gender: { type: String, enum: ['women', 'men', 'kids', 'unisex'], default: 'women' },
 
@@ -142,6 +146,14 @@ productSchema.index({ name: 'text', description: 'text', collection: 'text' });
 productSchema.pre('validate', function (next) {
   if (!this.slug && this.name) {
     this.slug = slugify(this.name, { lower: true, strict: true });
+  }
+  // The API accepts either the legacy `images` list or `coverImages`
+  // (+ `detailedImages`); fill whichever is missing so both always exist.
+  if ((!this.coverImages || this.coverImages.length === 0) && this.images?.length) {
+    this.coverImages = [this.images[0]];
+  }
+  if ((!this.images || this.images.length === 0) && this.coverImages?.length) {
+    this.images = [...this.coverImages, ...(this.detailedImages || [])];
   }
   next();
 });

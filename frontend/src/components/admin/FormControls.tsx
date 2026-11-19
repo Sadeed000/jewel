@@ -15,25 +15,25 @@ export function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-sm font-medium text-brand-ink">
+      <span className="mb-1.5 block text-[13px] font-medium text-admin-body">
         {label}
-        {required && <span className="ml-0.5 text-red-500">*</span>}
+        {required && <span className="ml-0.5 text-admin-gold-ink">*</span>}
       </span>
       {children}
-      {hint && <span className="mt-1 block text-xs text-brand-muted">{hint}</span>}
+      {hint && <span className="mt-1.5 block text-xs leading-relaxed text-admin-muted">{hint}</span>}
     </label>
   );
 }
 
 const control =
-  'w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-brand-ink outline-none transition-colors placeholder:text-slate-400 focus:border-brand-gold focus:ring-2 focus:ring-brand-gold/30 disabled:bg-slate-50';
+  'w-full rounded-xl border border-admin-line bg-admin-surface px-3.5 py-2.5 text-sm text-admin-ink shadow-[0_1px_2px_rgba(122,82,40,0.05)] outline-none transition-[border-color,box-shadow] duration-base placeholder:text-admin-muted/70 hover:border-admin-line-strong focus:border-admin-gold focus:ring-4 focus:ring-admin-gold/15 disabled:bg-admin-subtle disabled:text-admin-muted';
 
 export function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
   return <input {...props} className={cn(control, props.className)} />;
 }
 
 export function Textarea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  return <textarea {...props} className={cn(control, 'resize-y', props.className)} />;
+  return <textarea {...props} className={cn(control, 'resize-y leading-relaxed', props.className)} />;
 }
 
 export function Select({
@@ -46,7 +46,7 @@ export function Select({
   placeholder?: string;
 }) {
   return (
-    <select {...props} className={cn(control, 'capitalize', props.className)}>
+    <select {...props} className={cn(control, 'cursor-pointer capitalize', props.className)}>
       {placeholder !== undefined && <option value="">{placeholder}</option>}
       {options.map((o) => (
         <option key={o} value={o}>
@@ -57,6 +57,7 @@ export function Select({
   );
 }
 
+/** Switch-style toggle. */
 export function Toggle({
   label,
   checked,
@@ -67,14 +68,28 @@ export function Toggle({
   onChange: (v: boolean) => void;
 }) {
   return (
-    <label className="flex cursor-pointer items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5">
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
-        className="h-4 w-4 rounded border-slate-300 text-brand-maroon focus:ring-brand-gold"
-      />
-      <span className="text-sm text-brand-ink">{label}</span>
+    <label
+      className={cn(
+        'flex cursor-pointer items-center justify-between gap-3 rounded-xl border px-3.5 py-2.5 transition-colors duration-base',
+        checked ? 'border-admin-gold/50 bg-admin-gold-soft/60' : 'border-admin-line bg-admin-surface hover:border-admin-line-strong'
+      )}
+    >
+      <span className="text-sm font-medium text-admin-body">{label}</span>
+      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="peer sr-only" />
+      <span
+        aria-hidden="true"
+        className={cn(
+          'relative h-5 w-9 flex-none rounded-full transition-colors duration-base peer-focus-visible:ring-4 peer-focus-visible:ring-admin-gold/25',
+          checked ? 'bg-gradient-to-r from-admin-gold to-[#b48a4f]' : 'bg-admin-line-strong'
+        )}
+      >
+        <span
+          className={cn(
+            'absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-base ease-premium',
+            checked ? 'translate-x-[18px]' : 'translate-x-0.5'
+          )}
+        />
+      </span>
     </label>
   );
 }
@@ -83,18 +98,20 @@ export function Button({
   variant = 'primary',
   className,
   ...props
-}: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'ghost' | 'danger' }) {
+}: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'gold' | 'ghost' | 'danger' }) {
   const styles = {
-    primary: 'bg-brand-maroon text-white hover:bg-brand-maroon-light disabled:bg-slate-300',
-    ghost: 'border border-slate-300 bg-white text-brand-ink hover:bg-slate-50',
-    danger: 'bg-red-600 text-white hover:bg-red-700',
+    primary:
+      'bg-gradient-to-b from-[#8e2f3d] to-admin-maroon text-white shadow-admin-maroon hover:brightness-110',
+    gold: 'bg-gradient-to-b from-admin-gold-light to-admin-gold text-admin-ink shadow-admin-gold hover:brightness-105',
+    ghost: 'border border-admin-line bg-admin-surface text-admin-ink shadow-[0_1px_2px_rgba(122,82,40,0.05)] hover:border-admin-gold/50 hover:bg-admin-gold-soft',
+    danger: 'bg-rose-600 text-white hover:bg-rose-700',
   }[variant];
 
   return (
     <button
       {...props}
       className={cn(
-        'inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:cursor-not-allowed',
+        'inline-flex h-10 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold tracking-[-0.005em] transition-[background-color,border-color,filter,transform] duration-base active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-admin-gold/25 disabled:cursor-not-allowed disabled:opacity-50',
         styles,
         className
       )}
@@ -104,6 +121,9 @@ export function Button({
 
 export function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h4 className="text-xs font-semibold uppercase tracking-[0.15em] text-brand-muted">{children}</h4>
+    <h4 className="flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-admin-gold-ink">
+      {children}
+      <span className="h-px flex-1 bg-admin-line" aria-hidden="true" />
+    </h4>
   );
 }

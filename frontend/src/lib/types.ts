@@ -271,17 +271,34 @@ export interface Testimonial {
 export interface BlogPost {
   _id: string;
   slug: string;
+  previousSlugs?: string[];
   title: string;
   excerpt: string;
   content?: string;
-  coverImage: string;
+  coverImage?: string;
+  coverImageAlt?: string;
   category?: string;
   tags: string[];
   author: { name: string; avatar?: string };
   readTime: string;
-  publishedAt: string;
-  viewCount?: number;
+  isPublished?: boolean;
+  /** Null until first published. */
+  publishedAt: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+  seo?: { metaTitle?: string; metaDescription?: string };
+  /** Editorial planning only (admin API). */
+  targetKeyword?: string;
+  relatedProducts?: string[];
+  relatedCollections?: { label: string; href: string }[];
 }
+
+/** Editable fields sent by the admin editor. */
+export type BlogPostInput = Pick<
+  BlogPost,
+  'title' | 'slug' | 'excerpt' | 'content' | 'coverImage' | 'coverImageAlt' | 'category' |
+  'author' | 'isPublished' | 'seo' | 'targetKeyword' | 'relatedProducts' | 'relatedCollections'
+>;
 
 /* ────── Site settings ────── */
 export interface SiteSettings {

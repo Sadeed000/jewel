@@ -8,6 +8,7 @@ const {
   createPaymentSession,
   verifyPayment,
   failPayment,
+  updateStatus,
 } = require('../validators/orderValidator');
 
 const router = express.Router();
@@ -45,6 +46,6 @@ router.post('/payment/verify', validate(verifyPayment), orderController.verifyPa
 router.post('/payment/failed', validate(failPayment), orderController.failPayment);
 
 // Admin
-router.patch('/:id/status', restrictTo('admin'), orderController.updateStatus);
+router.patch('/:id/status', restrictTo('admin'), validate(updateStatus), orderController.updateStatus);
 
 module.exports = router;

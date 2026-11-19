@@ -6,12 +6,14 @@ import { Plus, Edit3, Trash2, Search, AlertCircle, PackageX } from 'lucide-react
 import { useProducts } from '@/hooks/useProducts';
 import { useCreateProduct, useDeleteProduct, useUpdateProduct } from '@/hooks/useAdmin';
 import { formatPrice, resolveImageUrl } from '@/lib/utils';
-import { SectionLoader, ErrorState } from '@/components/common/Loading';
+import { PageHeader, Chip, AdminEmpty, AdminSkeleton, AdminError } from '@/components/admin/ui';
 import ImageUploader from '@/components/admin/ImageUploader';
 import Modal from '@/components/admin/Modal';
 import { Field, Input, Select, Textarea, Toggle, Button, SectionTitle } from '@/components/admin/FormControls';
 import { ApiError } from '@/lib/api';
 import type { Product } from '@/lib/types';
+import { useConfirm } from '@/components/providers/ConfirmProvider';
+import { useToast } from '@/components/providers/ToastProvider';
 
 const categoryOptions = ['gold', 'diamond', 'gemstone', 'platinum', 'silver'] as const;
 const typeOptions = [
@@ -107,6 +109,8 @@ export default function AdminProductsPage() {
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
   const deleteProduct = useDeleteProduct();
+  const confirm = useConfirm();
+  const toast = useToast();
 
   const products = useMemo(() => data?.items ?? [], [data]);
 
@@ -225,115 +229,145 @@ export default function AdminProductsPage() {
   };
 
   const handleDelete = async (product: Product) => {
-    if (!window.confirm(`Delete "${product.name}" permanently?`)) return;
-    await deleteProduct.mutateAsync(product._id);
-    refetch();
+    const ok = await confirm({
+      title: `Delete "${product.name}"?`,
+      description:
+        'The product will be permanently removed from the catalogue, search and every customer wishlist. This cannot be undone.',
+      confirmLabel: 'Delete product',
+    });
+    if (!ok) return;
+    try {
+      await deleteProduct.mutateAsync(product._id);
+      toast.success('Product deleted', { description: product.name });
+      refetch();
+    } catch (err) {
+      toast.error((err as Error).message || 'Could not delete this product.');
+    }
   };
 
-  if (isLoading) return <SectionLoader label="Loading products…" />;
-  if (error) return <ErrorState description={(error as Error).message} onRetry={() => refetch()} />;
+  if (isLoading) return <AdminSkeleton rows={6} />;
+  if (error) return <AdminError title="Couldn't load products" message={(error as Error).message} onRetry={() => refetch()} />;
 
   return (
-    <div className="space-y-5">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="font-display text-2xl text-brand-ink">Products</h2>
-          <p className="text-sm text-brand-muted">
-            {products.length} product{products.length === 1 ? '' : 's'} in the catalogue
-          </p>
-        </div>
-        <Button onClick={openCreate}>
-          <Plus size={16} /> Add product
-        </Button>
-      </header>
+    <div>
+      <PageHeader
+        eyebrow="Catalogue"
+        title="Products"
+        description={`${products.length} product${products.length === 1 ? '' : 's'} in the catalogue`}
+        actions={
+          <Button onClick={openCreate}>
+            <Plus size={16} /> Add product
+          </Button>
+        }
+      />
 
-      <div className="relative max-w-sm">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+      <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {[
+          { label: 'Total', value: products.length },
+          { label: 'In stock', value: products.filter((p) => p.inStock).length },
+          { label: 'Out of stock', value: products.filter((p) => !p.inStock).length },
+          { label: 'Bestsellers', value: products.filter((p) => p.isBestseller).length },
+        ].map((s) => (
+          <div key={s.label} className="rounded-xl border border-admin-line bg-admin-surface px-4 py-3 shadow-[0_1px_2px_rgba(28,25,23,0.04)]">
+            <p className="text-xs font-medium text-admin-muted">{s.label}</p>
+            <p className="mt-1 text-xl font-bold tabular-nums tracking-[-0.02em] text-admin-ink">{s.value}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="mb-4 relative max-w-sm">
+        <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-admin-muted" />
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search by name, SKU or category"
-          className="pl-9"
+          className="pl-10"
         />
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+      <div className="overflow-hidden rounded-2xl border border-admin-line bg-admin-surface shadow-admin-card">
         {filtered.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 py-16 text-center">
-            <PackageX size={32} className="text-slate-300" />
-            <p className="text-sm text-brand-muted">
-              {products.length === 0 ? 'No products yet. Add your first one.' : 'No products match that search.'}
-            </p>
-            {products.length === 0 && (
-              <Button onClick={openCreate}>
-                <Plus size={16} /> Add product
-              </Button>
-            )}
-          </div>
+          <AdminEmpty
+            icon={PackageX}
+            title={products.length === 0 ? 'No products yet' : 'No matches'}
+            description={products.length === 0 ? 'Add your first piece to start selling.' : 'No products match that search.'}
+            action={
+              products.length === 0 ? (
+                <Button onClick={openCreate}>
+                  <Plus size={16} /> Add product
+                </Button>
+              ) : undefined
+            }
+          />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wider text-brand-muted">
-                <tr>
-                  <th className="px-4 py-3 font-medium">Product</th>
-                  <th className="px-4 py-3 font-medium">Category</th>
-                  <th className="px-4 py-3 font-medium">Price</th>
-                  <th className="px-4 py-3 font-medium">Stock</th>
-                  <th className="px-4 py-3 text-right font-medium">Actions</th>
+            <table className="w-full min-w-[720px] text-left text-sm">
+              <thead>
+                <tr className="border-b border-admin-line bg-gradient-to-r from-admin-gold-soft to-admin-subtle text-[11px] font-bold uppercase tracking-[0.12em] text-admin-gold-ink">
+                  <th className="px-6 py-3.5">Product</th>
+                  <th className="px-4 py-3.5">Category</th>
+                  <th className="px-4 py-3.5">Price</th>
+                  <th className="px-4 py-3.5">Stock</th>
+                  <th className="px-6 py-3.5 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-admin-line">
                 {filtered.map((product) => {
                   const thumb = product.coverImages?.[0] ?? product.images?.[0];
                   return (
-                    <tr key={product._id} className="hover:bg-slate-50">
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
+                    <tr key={product._id} className="group transition-colors hover:bg-admin-subtle">
+                      <td className="px-6 py-3.5">
+                        <div className="flex items-center gap-3.5">
+                          <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-admin-line bg-admin-subtle">
                             {thumb && (
                               <Image
                                 src={resolveImageUrl(thumb)}
                                 alt={product.name}
                                 fill
                                 className="object-cover"
-                                sizes="44px"
+                                sizes="48px"
                                 unoptimized
                               />
                             )}
                           </div>
                           <div className="min-w-0">
-                            <p className="truncate font-medium text-brand-ink">{product.name}</p>
-                            <p className="text-xs text-brand-muted">{product.sku || product.slug}</p>
+                            <p className="truncate font-semibold text-admin-ink">{product.name}</p>
+                            <p className="text-xs text-admin-muted">{product.sku || product.slug}</p>
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3">
-                        <span className="rounded-full bg-brand-cream px-2.5 py-1 text-xs capitalize text-brand-maroon">
-                          {product.category}
-                        </span>
-                        <span className="ml-1.5 text-xs capitalize text-brand-muted">{product.type}</span>
+                      <td className="px-4 py-3.5">
+                        <div className="flex items-center gap-1.5">
+                          <Chip tone="gold">{product.category}</Chip>
+                          <span className="text-xs capitalize text-admin-muted">{product.type.replace(/-/g, ' ')}</span>
+                        </div>
                       </td>
-                      <td className="px-4 py-3 font-medium text-brand-ink">{formatPrice(product.price)}</td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3.5">
+                        <p className="font-semibold tabular-nums text-admin-ink">{formatPrice(product.price)}</p>
+                        {product.originalPrice && product.originalPrice > product.price ? (
+                          <p className="text-xs tabular-nums text-admin-muted line-through">{formatPrice(product.originalPrice)}</p>
+                        ) : null}
+                      </td>
+                      <td className="px-4 py-3.5">
                         {product.inStock ? (
-                          <span className="text-xs text-emerald-700">In stock ({product.stockQty ?? 0})</span>
+                          <Chip tone="success">In stock · {product.stockQty ?? 0}</Chip>
                         ) : (
-                          <span className="text-xs text-red-600">Out of stock</span>
+                          <Chip tone="danger">Out of stock</Chip>
                         )}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-6 py-3.5">
                         <div className="flex justify-end gap-1">
                           <button
                             onClick={() => openEdit(product)}
                             aria-label={`Edit ${product.name}`}
-                            className="rounded-lg p-2 text-brand-muted hover:bg-brand-cream hover:text-brand-maroon"
+                            className="grid h-9 w-9 place-items-center rounded-lg text-admin-muted transition-colors hover:bg-admin-gold-soft hover:text-admin-gold-ink"
                           >
                             <Edit3 size={15} />
                           </button>
                           <button
                             onClick={() => handleDelete(product)}
                             aria-label={`Delete ${product.name}`}
-                            className="rounded-lg p-2 text-brand-muted hover:bg-red-50 hover:text-red-600"
+                            className="grid h-9 w-9 place-items-center rounded-lg text-admin-muted transition-colors hover:bg-rose-50 hover:text-rose-600"
                           >
                             <Trash2 size={15} />
                           </button>

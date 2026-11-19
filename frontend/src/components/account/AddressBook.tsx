@@ -6,6 +6,7 @@ import { useCurrentUser } from '@/hooks/useAuth';
 import { useAddAddress, useUpdateAddress, useDeleteAddress } from '@/hooks/useOrders';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/components/providers/ToastProvider';
+import { useConfirm } from '@/components/providers/ConfirmProvider';
 import type { Address } from '@/lib/types';
 
 const empty = {
@@ -38,6 +39,7 @@ const validate = (a: Form): Partial<Record<keyof Form, string>> => {
 
 export default function AddressBook() {
   const toast = useToast();
+  const confirm = useConfirm();
   const { data: user } = useCurrentUser();
   const addAddress = useAddAddress();
   const updateAddress = useUpdateAddress();
@@ -102,6 +104,15 @@ export default function AddressBook() {
   };
 
   const handleDelete = async (id: string) => {
+    const address = addresses.find((a) => a._id === id);
+    const ok = await confirm({
+      title: 'Delete this address?',
+      description: address
+        ? `${address.label || 'Address'} — ${address.line1}, ${address.city} ${address.pincode} will be permanently removed from your address book.`
+        : 'This address will be permanently removed from your address book.',
+      confirmLabel: 'Delete address',
+    });
+    if (!ok) return;
     setServerError('');
     try {
       await deleteAddress.mutateAsync(id);

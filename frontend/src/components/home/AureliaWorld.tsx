@@ -2,10 +2,10 @@ import Link from 'next/link';
 import Image from 'next/image';
 
 const worldTiles = [
-  { image: 'https://images.unsplash.com/photo-1583292650898-7d22cd27ca6f?w=900', title: 'Wedding', href: '/shop/wedding' },
-  { image: 'https://images.unsplash.com/photo-1602173574767-37ac01994b2a?w=900', title: 'Diamond', href: '/shop/diamond' },
-  { image: 'https://images.unsplash.com/photo-1611652022419-a9419f74343d?w=900', title: 'Gold', href: '/shop/gold' },
-  { image: 'https://images.unsplash.com/photo-1535632787350-4e68ef0ac584?w=900', title: 'Dailywear', href: '/shop/daily-wear' },
+  { image: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009728/ratnapankh/library/photo-1583292650898-7d22cd27ca6f.jpg', title: 'Wedding', href: '/shop/wedding' },
+  { image: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009724/ratnapankh/library/photo-1602173574767-37ac01994b2a.jpg', title: 'Diamond', href: '/shop/diamond' },
+  { image: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009721/ratnapankh/library/photo-1611652022419-a9419f74343d.jpg', title: 'Gold', href: '/shop/gold' },
+  { image: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009727/ratnapankh/library/photo-1535632787350-4e68ef0ac584.jpg', title: 'Dailywear', href: '/shop/daily-wear' },
 ];
 
 export default function AureliaWorld() {

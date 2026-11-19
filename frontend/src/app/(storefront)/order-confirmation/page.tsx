@@ -1,6 +1,7 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
+import { trackPurchaseOnce } from '@/lib/analytics';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { CheckCircle2, Package, MapPin, CalendarDays } from 'lucide-react';
@@ -18,6 +19,26 @@ function Confirmation() {
   // the order number or the Mongo id.
   const orderNumber = useSearchParams().get('order') || undefined;
   const { data: order, isLoading } = useOrder(orderNumber);
+
+  // GA4 purchase: only for a confirmed sale (COD, or paid online), and only
+  // once per order even if this page is reloaded or revisited.
+  useEffect(() => {
+    if (!order || order.status === 'cancelled') return;
+    if (order.paymentMethod !== 'cod' && order.paymentStatus !== 'paid') return;
+    trackPurchaseOnce({
+      orderNumber: order.orderNumber,
+      total: order.total,
+      tax: order.tax,
+      shippingFee: order.shippingFee,
+      items: order.items.map((i) => ({
+        item_id: i.product,
+        item_name: i.name,
+        item_variant: i.size,
+        price: i.unitPrice,
+        quantity: i.quantity,
+      })),
+    });
+  }, [order]);
 
   if (orderNumber && isLoading) return <SectionLoader label="Loading your order..." />;
 

@@ -7,11 +7,16 @@ import type { Banner, BlogPost, Category, Paginated, SiteSettings, Testimonial }
 
 /* ───────────── Banners ───────────── */
 
-export function useBanners(placement?: Banner['placement']) {
+/**
+ * `initialData` lets a server component hand over banners it already fetched,
+ * so they're in the first HTML instead of arriving after hydration.
+ */
+export function useBanners(placement?: Banner['placement'], initialData?: Banner[]) {
   return useQuery({
     queryKey: queryKeys.content.banners(placement),
     queryFn: () => api.get<{ banners: Banner[] }>('/content/banners', placement ? { placement } : undefined).then((d) => d.banners),
     staleTime: 10 * 60 * 1000, // banners change infrequently
+    initialData,
   });
 }
 

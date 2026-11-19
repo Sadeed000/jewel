@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { pageMetadata } from '@/lib/seo';
 import Image from 'next/image';
 import Link from 'next/link';
 import Breadcrumb from '@/components/common/Breadcrumb';
@@ -8,25 +9,28 @@ import BrandPromises from '@/components/shop/BrandPromises';
 import CollectionStory from '@/components/shop/CollectionStory';
 import { fetchProducts } from '@/lib/server-api';
 import { Gift, Mail, MessageCircle, Sparkles } from 'lucide-react';
+import { hero } from '@/lib/imagery';
 
-export const metadata: Metadata = {
-  title: 'Gifting — Jewellery Gifts, Gift Cards & Concierge',
-  description: 'Effortless gifting, curated for every occasion. Gift cards, concierge services, and jewellery for anniversaries, birthdays, festivals, and beyond.',
-};
+export const metadata: Metadata = pageMetadata({
+  title: "Jewellery Gifts for Every Occasion",
+  description:
+    "Jewellery gift ideas for birthdays, anniversaries and festivals — rings, earrings and pendants with prices in INR.",
+  path: '/gifting',
+});
 
 const occasions = [
-  { label: 'Anniversary', icon: '◈', img: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=600&auto=format&fit=crop' },
-  { label: 'Birthday', icon: '✦', img: 'https://images.unsplash.com/photo-1535632787350-4e68ef0ac584?w=600&auto=format&fit=crop' },
-  { label: 'Festive', icon: '❀', img: 'https://images.unsplash.com/photo-1611652022419-a9419f74343d?w=600&auto=format&fit=crop' },
-  { label: 'Wedding', icon: '◇', img: 'https://images.unsplash.com/photo-1583292650898-7d22cd27ca6f?w=600&auto=format&fit=crop' },
-  { label: 'Just Because', icon: '◯', img: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=600&auto=format&fit=crop' },
+  { label: 'Anniversary', icon: '◈', img: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009707/ratnapankh/library/photo-1611591437281-460bfbe1220a.jpg' },
+  { label: 'Birthday', icon: '✦', img: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009727/ratnapankh/library/photo-1535632787350-4e68ef0ac584.jpg' },
+  { label: 'Festive', icon: '❀', img: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009721/ratnapankh/library/photo-1611652022419-a9419f74343d.jpg' },
+  { label: 'Wedding', icon: '◇', img: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009728/ratnapankh/library/photo-1583292650898-7d22cd27ca6f.jpg' },
+  { label: 'Just Because', icon: '◯', img: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009705/ratnapankh/library/photo-1605100804763-247f67b3557e.jpg' },
 ];
 
 const giftRanges = [
-  { label: 'Under ₹15K', value: 15000, img: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=600&auto=format&fit=crop' },
-  { label: 'Under ₹30K', value: 30000, img: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=600&auto=format&fit=crop' },
-  { label: 'Under ₹50K', value: 50000, img: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=600&auto=format&fit=crop' },
-  { label: 'Above ₹1L', value: 100000, img: 'https://images.unsplash.com/photo-1573408301185-9146fe634ad0?w=600&auto=format&fit=crop' },
+  { label: 'Under ₹15K', value: 15000, img: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009723/ratnapankh/library/photo-1599643478518-a784e5dc4c8f.jpg' },
+  { label: 'Under ₹30K', value: 30000, img: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009705/ratnapankh/library/photo-1605100804763-247f67b3557e.jpg' },
+  { label: 'Under ₹50K', value: 50000, img: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009707/ratnapankh/library/photo-1611591437281-460bfbe1220a.jpg' },
+  { label: 'Above ₹1L', value: 100000, img: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009725/ratnapankh/library/photo-1573408301185-9146fe634ad0.jpg' },
 ];
 
 export default async function GiftingPage() {
@@ -37,7 +41,8 @@ export default async function GiftingPage() {
       {/* Hero */}
       <section className="relative h-[360px] md:h-[480px] overflow-hidden">
         <Image
-          src="https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=1800&auto=format&fit=crop"
+          src={hero('giftingPearlBox')}
+          quality={85}
           alt="Gift of Choice"
           fill
           priority
@@ -112,7 +117,7 @@ export default async function GiftingPage() {
                   </span>
                 ))}
               </div>
-              <Link href="#" className="inline-block mt-6 px-6 py-3 bg-brand-gold text-brand-maroon-dark text-xs font-semibold tracking-widest uppercase rounded-sm hover:bg-brand-gold-light transition-colors">
+              <Link href="/help" className="inline-block mt-6 px-6 py-3 bg-brand-gold text-brand-maroon-dark text-xs font-semibold tracking-widest uppercase rounded-sm hover:bg-brand-gold-light transition-colors">
                 Send a Gift Card
               </Link>
             </div>
@@ -120,14 +125,14 @@ export default async function GiftingPage() {
 
           {/* Physical Gift Card */}
           <div className="relative rounded-2xl overflow-hidden min-h-[320px] bg-gradient-to-br from-amber-50 via-rose-50 to-orange-50 p-8 md:p-10 border border-brand-cream-dark">
-            <Image src="https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=600&auto=format&fit=crop" alt="" fill className="object-cover opacity-30" />
+            <Image src="https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009707/ratnapankh/library/photo-1611591437281-460bfbe1220a.jpg" alt="" fill className="object-cover opacity-30" />
             <div className="relative">
               <p className="text-[10px] tracking-[0.4em] uppercase text-brand-gold-dark">Physical Gift Card</p>
               <h3 className="font-display text-3xl md:text-4xl text-brand-maroon mt-2">A keepsake worth keeping.</h3>
               <p className="text-sm text-brand-ink/80 mt-3 max-w-md leading-relaxed">
                 A beautifully crafted card, hand-delivered in our signature gift box — a gift before the gift.
               </p>
-              <Link href="#" className="inline-block mt-6 px-6 py-3 bg-brand-maroon text-white text-xs font-semibold tracking-widest uppercase rounded-sm hover:bg-brand-maroon-dark transition-colors">
+              <Link href="/help" className="inline-block mt-6 px-6 py-3 bg-brand-maroon text-white text-xs font-semibold tracking-widest uppercase rounded-sm hover:bg-brand-maroon-dark transition-colors">
                 Order Physical Card
               </Link>
             </div>
@@ -208,7 +213,7 @@ export default async function GiftingPage() {
 
             <div className="relative aspect-[4/3] rounded-lg overflow-hidden">
               <Image
-                src="https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=900&auto=format&fit=crop"
+                src="https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009705/ratnapankh/library/photo-1605100804763-247f67b3557e.jpg"
                 alt="Gift Concierge"
                 fill
                 className="object-cover"
@@ -246,7 +251,7 @@ export default async function GiftingPage() {
         body="The best gifts aren't bought — they're chosen with care, wrapped with thought, and given without occasion. We're here to help you give beautifully, every time."
         ctaLabel="Talk to a Concierge"
         ctaHref="/help"
-        bgImage="https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=1800&auto=format&fit=crop"
+        bgImage="https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009707/ratnapankh/library/photo-1611591437281-460bfbe1220a.jpg"
       />
     </div>
   );

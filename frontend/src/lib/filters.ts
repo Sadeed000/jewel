@@ -78,6 +78,8 @@ export const FILTER_GROUPS: FilterGroup[] = [
       { label: 'Sapphire', value: 'sapphire' },
       { label: 'Tanzanite', value: 'tanzanite' },
       { label: 'Pearl', value: 'pearl' },
+      { label: 'Opal', value: 'opal' },
+      { label: 'Moissanite', value: 'moissanite' },
       { label: 'No Stone', value: 'none' },
     ],
   },

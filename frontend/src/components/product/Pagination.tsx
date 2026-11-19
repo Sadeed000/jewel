@@ -1,7 +1,9 @@
 'use client';
 
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { startNavigationProgress } from '@/components/common/NavigationProgress';
 
 /**
  * Page navigation driven by the `page` URL param, so it composes with the
@@ -33,6 +35,7 @@ export default function Pagination({
     if (target <= 1) next.delete('page');
     else next.set('page', String(target));
     const qs = next.toString();
+    startNavigationProgress();
     router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: true });
   };
 
@@ -44,25 +47,27 @@ export default function Pagination({
 
   const numbers = Array.from({ length: end - start + 1 }, (_, i) => start + i);
 
+  const numberClass = (current: boolean) =>
+    cn(
+      'w-10 h-10 rounded-full text-sm tabular-nums transition-[background-color,color,box-shadow,transform] duration-base ease-premium active:scale-90',
+      current
+        ? 'bg-brand-maroon text-white shadow-btn-primary'
+        : 'text-brand-ink hover:bg-white hover:shadow-soft'
+    );
+
   return (
-    <nav
-      className="flex items-center justify-center gap-2 mt-12 flex-wrap"
-      aria-label="Pagination"
-    >
+    <nav className="flex items-center justify-center gap-1.5 mt-14 flex-wrap" aria-label="Pagination">
       <button
         onClick={() => goTo(page - 1)}
         disabled={!hasPrev}
-        className="px-4 h-9 rounded-full border border-brand-cream-dark text-sm hover:bg-brand-cream disabled:opacity-40 disabled:hover:bg-transparent"
+        className="btn-outline btn-sm h-10 pl-3 pr-4 mr-2"
       >
-        ← Prev
+        <ChevronLeft size={16} /> Prev
       </button>
 
       {start > 1 && (
         <>
-          <button
-            onClick={() => goTo(1)}
-            className="w-9 h-9 rounded-full text-sm border border-brand-cream-dark hover:bg-brand-cream"
-          >
+          <button onClick={() => goTo(1)} className={numberClass(false)} aria-label="Page 1">
             1
           </button>
           {start > 2 && <span className="text-brand-muted px-1">…</span>}
@@ -74,12 +79,8 @@ export default function Pagination({
           key={n}
           onClick={() => goTo(n)}
           aria-current={n === page ? 'page' : undefined}
-          className={cn(
-            'w-9 h-9 rounded-full text-sm transition-colors',
-            n === page
-              ? 'bg-brand-maroon text-white'
-              : 'border border-brand-cream-dark hover:bg-brand-cream'
-          )}
+          aria-label={`Page ${n}`}
+          className={numberClass(n === page)}
         >
           {n}
         </button>
@@ -88,10 +89,7 @@ export default function Pagination({
       {end < pages && (
         <>
           {end < pages - 1 && <span className="text-brand-muted px-1">…</span>}
-          <button
-            onClick={() => goTo(pages)}
-            className="w-9 h-9 rounded-full text-sm border border-brand-cream-dark hover:bg-brand-cream"
-          >
+          <button onClick={() => goTo(pages)} className={numberClass(false)} aria-label={`Page ${pages}`}>
             {pages}
           </button>
         </>
@@ -100,9 +98,9 @@ export default function Pagination({
       <button
         onClick={() => goTo(page + 1)}
         disabled={!hasNext}
-        className="px-4 h-9 rounded-full border border-brand-cream-dark text-sm hover:bg-brand-cream disabled:opacity-40 disabled:hover:bg-transparent"
+        className="btn-outline btn-sm h-10 pl-4 pr-3 ml-2"
       >
-        Next →
+        Next <ChevronRight size={16} />
       </button>
     </nav>
   );

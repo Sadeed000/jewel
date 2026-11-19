@@ -9,6 +9,7 @@ import ProductCard from '@/components/product/ProductCard';
 import ShopByOccasion from '@/components/shop/ShopByOccasion';
 import { useProducts } from '@/hooks/useProducts';
 import { ProductGridSkeleton } from '@/components/common/Loading';
+import { hero } from '@/lib/imagery';
 
 const occasions = [
   {
@@ -16,11 +17,11 @@ const occasions = [
     label: 'Extraordinary Hues',
     title: 'Extraordinary Hues',
     copy: 'For the women whose presence is its own colour. The stones she wears — bold, radiant, unforgettable.',
-    modelImage: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=900&auto=format&fit=crop',
+    modelImage: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009707/ratnapankh/library/photo-1611591437281-460bfbe1220a.jpg',
     productImages: [
-      'https://images.unsplash.com/photo-1535632787350-4e68ef0ac584?w=300&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1611652022419-a9419f74343d?w=300&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=300&auto=format&fit=crop',
+      'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009727/ratnapankh/library/photo-1535632787350-4e68ef0ac584.jpg',
+      'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009721/ratnapankh/library/photo-1611652022419-a9419f74343d.jpg',
+      'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009705/ratnapankh/library/photo-1605100804763-247f67b3557e.jpg',
     ],
   },
   {
@@ -28,11 +29,11 @@ const occasions = [
     label: 'Office Elegance',
     title: 'Office Elegance',
     copy: 'Refined pieces that speak softly but command attention through every meeting and milestone.',
-    modelImage: 'https://images.unsplash.com/photo-1573408301185-9146fe634ad0?w=900&auto=format&fit=crop',
+    modelImage: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009725/ratnapankh/library/photo-1573408301185-9146fe634ad0.jpg',
     productImages: [
-      'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=300&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1535632066274-36f4c5f29f5f?w=300&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1611652022419-a9419f74343d?w=300&auto=format&fit=crop',
+      'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009723/ratnapankh/library/photo-1599643478518-a784e5dc4c8f.jpg',
+      'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795007344/ratnapankh/heroes/earrings-sapphire-drops.jpg',
+      'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009721/ratnapankh/library/photo-1611652022419-a9419f74343d.jpg',
     ],
   },
   {
@@ -40,11 +41,11 @@ const occasions = [
     label: 'Festive Glow',
     title: 'Festive Glow',
     copy: 'Heritage motifs and golden warmth for every celebration that defines your year.',
-    modelImage: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=900&auto=format&fit=crop',
+    modelImage: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009705/ratnapankh/library/photo-1605100804763-247f67b3557e.jpg',
     productImages: [
-      'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=300&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1602173574767-37ac01994b2a?w=300&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1583292650898-7d22cd27ca6f?w=300&auto=format&fit=crop',
+      'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009707/ratnapankh/library/photo-1611591437281-460bfbe1220a.jpg',
+      'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009724/ratnapankh/library/photo-1602173574767-37ac01994b2a.jpg',
+      'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009728/ratnapankh/library/photo-1583292650898-7d22cd27ca6f.jpg',
     ],
   },
 ];
@@ -83,8 +84,8 @@ export default function AllJewelleryPage() {
   return (
     <div>
       <PageHeroBanner
-        image="https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=1800&auto=format&fit=crop"
-        eyebrow="A Tata Heritage"
+        image={hero('jewelleryRoseEmeraldSet')}
+        eyebrow="The Signature Edit"
         title={'Elevated\nSummer Stack'}
         highlight="10% off*"
         subtitle="on making charges"
@@ -182,9 +183,9 @@ export default function AllJewelleryPage() {
 
 function DailywearMosaic() {
   const tiles = [
-    { label: 'Dailywear Rings', image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=400&auto=format&fit=crop' },
-    { label: 'Dailywear Earrings', image: 'https://images.unsplash.com/photo-1535632787350-4e68ef0ac584?w=400&auto=format&fit=crop' },
-    { label: 'Dailywear Mangalsutra', image: 'https://images.unsplash.com/photo-1583292650898-7d22cd27ca6f?w=400&auto=format&fit=crop' },
+    { label: 'Dailywear Rings', image: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009705/ratnapankh/library/photo-1605100804763-247f67b3557e.jpg' },
+    { label: 'Dailywear Earrings', image: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009727/ratnapankh/library/photo-1535632787350-4e68ef0ac584.jpg' },
+    { label: 'Dailywear Mangalsutra', image: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009728/ratnapankh/library/photo-1583292650898-7d22cd27ca6f.jpg' },
   ];
   return (
     <div className="relative h-full bg-gradient-to-br from-brand-maroon via-brand-maroon-dark to-brand-maroon-dark rounded-lg p-5 overflow-hidden">
@@ -210,7 +211,8 @@ function ChooseYourLook() {
           <div key={label} className="relative group cursor-pointer overflow-hidden">
             <div className={`absolute inset-0 ${i === 2 ? 'ring-2 ring-brand-maroon ring-inset z-10' : ''}`} />
             <img
-              src={`https://images.unsplash.com/photo-${['1611591437281-460bfbe1220a', '1573408301185-9146fe634ad0', '1611591437281-460bfbe1220a', '1599643478518-a784e5dc4c8f', '1605100804763-247f67b3557e'][i]}?w=300&auto=format&fit=crop`}
+              src={['https://res.cloudinary.com/dnsulnx1r/image/upload/c_fill,g_auto,ar_1:1,w_400,f_auto,q_auto:good/v1795009707/ratnapankh/library/photo-1611591437281-460bfbe1220a.jpg', 'https://res.cloudinary.com/dnsulnx1r/image/upload/c_fill,g_auto,ar_1:1,w_400,f_auto,q_auto:good/v1795009725/ratnapankh/library/photo-1573408301185-9146fe634ad0.jpg', 'https://res.cloudinary.com/dnsulnx1r/image/upload/c_fill,g_auto,ar_1:1,w_400,f_auto,q_auto:good/v1795009707/ratnapankh/library/photo-1611591437281-460bfbe1220a.jpg', 'https://res.cloudinary.com/dnsulnx1r/image/upload/c_fill,g_auto,ar_1:1,w_400,f_auto,q_auto:good/v1795009723/ratnapankh/library/photo-1599643478518-a784e5dc4c8f.jpg', 'https://res.cloudinary.com/dnsulnx1r/image/upload/c_fill,g_auto,ar_1:1,w_400,f_auto,q_auto:good/v1795009705/ratnapankh/library/photo-1605100804763-247f67b3557e.jpg'][i]}
+              loading="lazy"
               alt={label}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform"
             />
@@ -224,9 +226,9 @@ function ChooseYourLook() {
 
 function FilterByPrice() {
   const tiles = [
-    { label: 'Under 25K', image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=400&auto=format&fit=crop' },
-    { label: '25K - 50K', image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=400&auto=format&fit=crop' },
-    { label: '50K - 1L', image: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=400&auto=format&fit=crop' },
+    { label: 'Under 25K', image: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009705/ratnapankh/library/photo-1605100804763-247f67b3557e.jpg' },
+    { label: '25K - 50K', image: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009723/ratnapankh/library/photo-1599643478518-a784e5dc4c8f.jpg' },
+    { label: '50K - 1L', image: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009707/ratnapankh/library/photo-1611591437281-460bfbe1220a.jpg' },
   ];
   return (
     <div className="relative h-full bg-gradient-to-br from-brand-maroon-dark to-brand-maroon rounded-lg p-5 overflow-hidden">

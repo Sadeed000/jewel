@@ -2,6 +2,7 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import UtilityBar from '@/components/layout/UtilityBar';
 import CartSync from '@/components/providers/CartSync';
+import Analytics from '@/components/providers/Analytics';
 import { fetchCategories } from '@/lib/server-api';
 
 /**
@@ -19,6 +20,7 @@ export default async function StorefrontLayout({ children }: { children: React.R
   return (
     <div className="min-h-screen flex flex-col">
       <CartSync />
+      <Analytics />
       <UtilityBar />
       <Header categories={categories} />
       <main className="flex-1">{children}</main>

@@ -53,7 +53,10 @@ const userSchema = new mongoose.Schema(
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
   this.password = await bcrypt.hash(this.password, 12);
-  if (!this.isNew) this.passwordChangedAt = new Date();
+  // Backdate by 1s: JWT `iat` is whole seconds, so a token issued in the same
+  // second as the change would otherwise look older than the change and the
+  // fresh token returned by update-password would be rejected immediately.
+  if (!this.isNew) this.passwordChangedAt = new Date(Date.now() - 1000);
   next();
 });
 

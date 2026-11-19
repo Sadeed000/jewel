@@ -5,6 +5,67 @@ import Link from 'next/link';
 import { MessageSquare, Phone, Mail, Plus, Minus } from 'lucide-react';
 import Breadcrumb from '@/components/common/Breadcrumb';
 import { useSubmitContact } from '@/hooks/useMisc';
+import { useToast } from '@/components/providers/ToastProvider';
+import { ApiError } from '@/lib/api';
+
+type ContactField = 'name' | 'email' | 'phone' | 'subject' | 'message';
+type ContactForm = Record<ContactField, string>;
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+/** Client-side checks, matching (or slightly stricter than) the API's rules. */
+function validateContact(f: ContactForm): Partial<Record<ContactField, string>> {
+  const e: Partial<Record<ContactField, string>> = {};
+  const name = f.name.trim();
+  const phoneDigits = f.phone.replace(/\D/g, '');
+  const message = f.message.trim();
+
+  if (!name) e.name = 'Please enter your name.';
+  else if (name.length < 2) e.name = 'Your name looks too short.';
+
+  if (!f.email.trim()) e.email = 'Please enter your email address.';
+  else if (!EMAIL_RE.test(f.email.trim())) e.email = 'Please enter a valid email address, like name@example.com.';
+
+  if (f.phone.trim()) {
+    if (!/^[+\d\s-]+$/.test(f.phone.trim())) e.phone = 'Phone number can contain only digits, spaces, + and -.';
+    else if (phoneDigits.length < 10 || phoneDigits.length > 15)
+      e.phone = 'Please enter a 10-digit mobile number (or include your country code).';
+  }
+
+  if (!message) e.message = 'Please tell us how we can help.';
+  else if (message.length < 10) e.message = `Your message is too short — please add a little more detail (${message.length}/10 characters).`;
+
+  return e;
+}
+
+/** Turns API / network failures into a sentence a customer understands. */
+function describeContactError(err: unknown): { title: string; description: string; field?: ContactField } {
+  if (err instanceof ApiError) {
+    const detail = err.details?.[0];
+    const field = detail?.field as ContactField | undefined;
+    const friendly: Partial<Record<ContactField, string>> = {
+      name: 'Please check your name.',
+      email: 'Please enter a valid email address.',
+      phone: 'Please enter a valid phone number.',
+      subject: 'The subject is too long.',
+      message: 'Please write a slightly longer message.',
+    };
+    if (err.status === 400 && field && friendly[field]) {
+      return { title: 'Please check your details', description: friendly[field]!, field };
+    }
+    if (err.status === 429) {
+      return { title: 'Too many attempts', description: 'Please wait a minute and try again.' };
+    }
+    if (err.status >= 500) {
+      return { title: "We couldn't send your message", description: 'Something went wrong on our side. Please try again in a moment, or call us.' };
+    }
+    return { title: "We couldn't send your message", description: err.message };
+  }
+  return {
+    title: 'No connection',
+    description: 'We could not reach our servers. Check your internet connection and try again.',
+  };
+}
 
 const faqs = [
   {
@@ -35,32 +96,64 @@ const faqs = [
 
 export default function HelpPage() {
   const [open, setOpen] = useState<number | null>(1);
-  const [contactForm, setContactForm] = useState({ name: '', email: '', phone: '', subject: '', message: '' });
+  const [contactForm, setContactForm] = useState<ContactForm>({ name: '', email: '', phone: '', subject: '', message: '' });
   const [contactSuccess, setContactSuccess] = useState(false);
 
+  const [errors, setErrors] = useState<Partial<Record<ContactField, string>>>({});
+  const toast = useToast();
   const submit = useSubmitContact();
 
   const handleContactChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setContactForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    const field = e.target.name as ContactField;
+    setContactForm((prev) => ({ ...prev, [field]: e.target.value }));
+    // Clear a field's error as soon as the customer edits it.
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
   };
 
   const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Same rules as the API, checked first so the customer gets a specific,
+    // friendly message instead of a round trip and a generic failure.
+    const found = validateContact(contactForm);
+    setErrors(found);
+    const first = (Object.keys(found) as ContactField[])[0];
+    if (first) {
+      toast.error('Please check your details', { description: found[first] });
+      document.querySelector<HTMLElement>(`[name="${first}"]`)?.focus();
+      return;
+    }
+
     try {
       await submit.mutateAsync({
-        name: contactForm.name,
-        email: contactForm.email,
-        phone: contactForm.phone,
-        subject: contactForm.subject,
-        message: contactForm.message,
+        name: contactForm.name.trim(),
+        email: contactForm.email.trim(),
+        phone: contactForm.phone.trim(),
+        subject: contactForm.subject.trim(),
+        message: contactForm.message.trim(),
       });
       setContactSuccess(true);
       setContactForm({ name: '', email: '', phone: '', subject: '', message: '' });
+      toast.success('Message sent', { description: "Thank you for reaching out — we'll get back to you shortly." });
       setTimeout(() => setContactSuccess(false), 5000);
     } catch (err) {
-      alert('Failed to send message. Please try again.');
+      const { title, description, field } = describeContactError(err);
+      if (field) setErrors({ [field]: description });
+      toast.error(title, { description });
     }
   };
+
+  const fieldClass = (field: ContactField) =>
+    `w-full px-4 py-3 border rounded outline-none text-sm ${
+      errors[field] ? 'border-red-400 focus:border-red-500 bg-red-50/40' : 'border-brand-cream-dark focus:border-brand-gold'
+    }`;
+
+  const FieldError = ({ field }: { field: ContactField }) =>
+    errors[field] ? (
+      <p id={`${field}-error`} className="mt-1.5 text-xs text-red-600">
+        {errors[field]}
+      </p>
+    ) : null;
 
   return (
     <div>
@@ -99,52 +192,88 @@ export default function HelpPage() {
               ✓ Thank you for reaching out! We'll get back to you shortly.
             </div>
           )}
-          <form onSubmit={handleContactSubmit} className="space-y-4">
+          {/* noValidate: our own checks show friendly messages + a toast
+              instead of the browser's native bubbles. */}
+          <form onSubmit={handleContactSubmit} noValidate className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input
-                name="name"
-                placeholder="Your Name"
-                value={contactForm.name}
-                onChange={handleContactChange}
-                required
-                className="px-4 py-3 border border-brand-cream-dark rounded outline-none focus:border-brand-gold text-sm"
-              />
-              <input
-                type="email"
-                name="email"
-                placeholder="Your Email"
-                value={contactForm.email}
-                onChange={handleContactChange}
-                required
-                className="px-4 py-3 border border-brand-cream-dark rounded outline-none focus:border-brand-gold text-sm"
-              />
+              <div>
+                <input
+                  name="name"
+                  placeholder="Your Name"
+                  autoComplete="name"
+                  maxLength={100}
+                  value={contactForm.name}
+                  onChange={handleContactChange}
+                  aria-invalid={!!errors.name}
+                  aria-describedby={errors.name ? 'name-error' : undefined}
+                  className={fieldClass('name')}
+                />
+                <FieldError field="name" />
+              </div>
+              <div>
+                <input
+                  type="email"
+                  name="email"
+                  placeholder="Your Email"
+                  autoComplete="email"
+                  maxLength={150}
+                  value={contactForm.email}
+                  onChange={handleContactChange}
+                  aria-invalid={!!errors.email}
+                  aria-describedby={errors.email ? 'email-error' : undefined}
+                  className={fieldClass('email')}
+                />
+                <FieldError field="email" />
+              </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input
-                type="tel"
-                name="phone"
-                placeholder="Phone (Optional)"
-                value={contactForm.phone}
-                onChange={handleContactChange}
-                className="px-4 py-3 border border-brand-cream-dark rounded outline-none focus:border-brand-gold text-sm"
-              />
-              <input
-                name="subject"
-                placeholder="Subject"
-                value={contactForm.subject}
-                onChange={handleContactChange}
-                className="px-4 py-3 border border-brand-cream-dark rounded outline-none focus:border-brand-gold text-sm"
-              />
+              <div>
+                <input
+                  type="tel"
+                  name="phone"
+                  placeholder="Phone (optional)"
+                  autoComplete="tel"
+                  inputMode="tel"
+                  maxLength={20}
+                  value={contactForm.phone}
+                  onChange={handleContactChange}
+                  aria-invalid={!!errors.phone}
+                  aria-describedby={errors.phone ? 'phone-error' : undefined}
+                  className={fieldClass('phone')}
+                />
+                <FieldError field="phone" />
+              </div>
+              <div>
+                <input
+                  name="subject"
+                  placeholder="Subject (optional)"
+                  maxLength={150}
+                  value={contactForm.subject}
+                  onChange={handleContactChange}
+                  className={fieldClass('subject')}
+                />
+                <FieldError field="subject" />
+              </div>
             </div>
-            <textarea
-              name="message"
-              placeholder="Your message..."
-              value={contactForm.message}
-              onChange={handleContactChange}
-              required
-              rows={5}
-              className="w-full px-4 py-3 border border-brand-cream-dark rounded outline-none focus:border-brand-gold text-sm resize-none"
-            />
+            <div>
+              <textarea
+                name="message"
+                placeholder="How can we help? (at least 10 characters)"
+                maxLength={2000}
+                value={contactForm.message}
+                onChange={handleContactChange}
+                aria-invalid={!!errors.message}
+                aria-describedby={errors.message ? 'message-error' : undefined}
+                rows={5}
+                className={`${fieldClass('message')} resize-none`}
+              />
+              <div className="flex items-start justify-between gap-3">
+                <FieldError field="message" />
+                <span className="ml-auto mt-1.5 text-[11px] tabular-nums text-brand-muted">
+                  {contactForm.message.trim().length}/2000
+                </span>
+              </div>
+            </div>
             <button
               type="submit"
               disabled={submit.isPending}

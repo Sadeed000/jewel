@@ -5,7 +5,7 @@ const register = Joi.object({
   lastName: Joi.string().max(50).allow('', null),
   email: Joi.string().email().required(),
   phone: Joi.string().pattern(/^[+\d\s-]{7,20}$/).allow('', null),
-  password: Joi.string().min(4).max(128).required(),
+  password: Joi.string().min(8).max(128).required(),
 });
 
 const login = Joi.object({

@@ -3,6 +3,7 @@ const Cart = require('../models/Cart');
 const Product = require('../models/Product');
 const AppError = require('../utils/AppError');
 const { parsePagination, paginate } = require('../utils/pagination');
+const { computeCouponDiscount } = require('./cartService');
 
 const SHIPPING_FREE_THRESHOLD = 1000; // free shipping above this amount
 const SHIPPING_FEE = 99;
@@ -148,7 +149,11 @@ const createOrder = async (userId, payload) => {
   }
 
   const subtotal = items.reduce((sum, it) => sum + it.subtotal, 0);
-  const discount = couponDiscount;
+  // Recompute against the final subtotal: the stored figure was calculated
+  // when the coupon was applied and may be stale (prices or quantities moved).
+  const recomputed = couponCode ? computeCouponDiscount(couponCode, subtotal) : null;
+  if (recomputed === null) couponCode = undefined;
+  const discount = recomputed ?? 0;
   const afterDiscount = Math.max(0, subtotal - discount);
   const shippingFee = afterDiscount >= SHIPPING_FREE_THRESHOLD ? 0 : SHIPPING_FEE;
   const tax = Math.round(afterDiscount * TAX_RATE);

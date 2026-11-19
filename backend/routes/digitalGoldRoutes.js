@@ -2,12 +2,12 @@ const express = require('express');
 const miscController = require('../controllers/miscController');
 const { protect } = require('../middlewares/auth');
 const validate = require('../middlewares/validate');
-const { digitalGoldEnrol } = require('../validators/miscValidators');
+const { digitalGoldEnrol, digitalGoldCalculate } = require('../validators/miscValidators');
 
 const router = express.Router();
 
 // Public calculator — used by /digital-gold page slider
-router.get('/calculate', miscController.calculate);
+router.get('/calculate', validate(digitalGoldCalculate, 'query'), miscController.calculate);
 
 // Authenticated plan operations
 router.use(protect);

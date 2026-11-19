@@ -139,7 +139,16 @@ const { UPLOAD_DIR } = require('./middlewares/upload');
 
 const app = express();
 
-const allowedorigins= allowedOrigins = process.env.CORS_ORIGINS
+/* Comma-separated allow-list, e.g. CORS_ORIGINS=https://aurelia.in,https://www.aurelia.in
+   When unset, every origin is reflected (the previous behaviour) so existing
+   deployments keep working; set it in production to lock the API down. */
+const allowedOrigins = (process.env.CORS_ORIGINS || '')
+  .split(',')
+  .map((o) => o.trim().replace(/\/$/, ''))
+  .filter(Boolean);
+
+const isLocalhost = (origin) => /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+
 /* ───────────── Trust proxy ───────────── */
 app.set('trust proxy', 1);
 
@@ -159,8 +168,12 @@ app.use(
 */
 const corsOptions = {
   origin(origin, callback) {
-    // Allow browser requests, Postman, curl, mobile apps and server requests.
-    callback(null, true);
+    // No Origin header: server-to-server, curl, Postman, mobile apps.
+    if (!origin || allowedOrigins.length === 0) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    if (process.env.NODE_ENV !== 'production' && isLocalhost(origin)) return callback(null, true);
+    // Deny without throwing: the browser blocks the response, the server stays quiet.
+    return callback(null, false);
   },
 
   credentials: true,
@@ -197,8 +210,18 @@ app.use(cors(corsOptions));
 /* Handle all preflight OPTIONS requests */
 app.options(/.*/, cors(corsOptions));
 
-/* ───────────── Body parsing ───────────── */
-app.use(express.json({ limit: '10mb' }));
+/* ───────────── Body parsing ─────────────
+   `verify` keeps the exact request bytes on req.rawBody: the Razorpay webhook
+   signature is an HMAC over those bytes, and re-serialising the parsed JSON
+   would not reproduce them. */
+app.use(
+  express.json({
+    limit: '10mb',
+    verify: (req, res, buf) => {
+      req.rawBody = buf;
+    },
+  })
+);
 app.use(
   express.urlencoded({
     extended: true,

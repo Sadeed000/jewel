@@ -12,7 +12,7 @@ import type { ImageSearchResult, Paginated, Product, ProductFilters } from '@/li
  */
 export function useProducts(
   filters: ProductFilters = {},
-  options: { enabled?: boolean } = {}
+  options: { enabled?: boolean; initialData?: Paginated<Product> } = {}
 ) {
   return useQuery({
     queryKey: queryKeys.products.list(filters as Record<string, unknown>),
@@ -22,25 +22,32 @@ export function useProducts(
     // Lets callers skip the request entirely (e.g. an empty guest wishlist,
     // where an empty `ids` filter would otherwise fetch the whole catalogue).
     enabled: options.enabled ?? true,
+    // Server-rendered pages pass what they already fetched, so the list is in
+    // the first HTML instead of appearing after a client round trip.
+    initialData: options.initialData,
   });
 }
 
-export function useProduct(slug: string | undefined) {
+export function useProduct(slug: string | undefined, initialProduct?: Product) {
   return useQuery({
     queryKey: queryKeys.products.bySlug(slug ?? ''),
     queryFn: () => api.get<{
       name: string;
-      category: string; product: Product 
+      category: string; product: Product
 }>(`/products/slug/${slug}`),
     enabled: !!slug,
+    initialData: initialProduct
+      ? { product: initialProduct, name: initialProduct.name, category: initialProduct.category }
+      : undefined,
   });
 }
 
-export function useRelatedProducts(slug: string | undefined, limit = 8) {
+export function useRelatedProducts(slug: string | undefined, limit = 8, initialItems?: Product[]) {
   return useQuery({
     queryKey: queryKeys.products.related(slug ?? ''),
     queryFn: () => api.get<{ items: Product[] }>(`/products/slug/${slug}/related`, { limit }),
     enabled: !!slug,
+    initialData: initialItems ? { items: initialItems } : undefined,
   });
 }
 
@@ -83,13 +90,13 @@ export function useImageSearch() {
 
 /* ───────────── Convenience hooks for homepage sections ───────────── */
 
-export function useBestsellers(limit = 8) {
-  return useProducts({ isBestseller: true, limit });
+export function useBestsellers(limit = 8, initialData?: Paginated<Product>) {
+  return useProducts({ isBestseller: true, limit }, { initialData });
 }
 
 
-export function useNewArrivals(limit = 8) {
-  return useProducts({ isNew: true, limit });
+export function useNewArrivals(limit = 8, initialData?: Paginated<Product>) {
+  return useProducts({ isNew: true, limit }, { initialData });
 }
 
 export function useFeaturedProducts(limit = 8) {

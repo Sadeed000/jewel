@@ -77,8 +77,15 @@ const listProducts = async (query) => {
   return paginate({ items, total, page, limit });
 };
 
+/**
+ * Looks up the current slug first, then any slug the product used before.
+ * A match on an old slug returns the product with its *current* slug, which
+ * the storefront compares against the requested one to issue a 308 redirect.
+ */
 const getProductBySlug = async (slug) => {
-  const product = await Product.findOne({ slug }).lean({ virtuals: true });
+  const product =
+    (await Product.findOne({ slug }).lean({ virtuals: true })) ||
+    (await Product.findOne({ previousSlugs: slug }).lean({ virtuals: true }));
   if (!product) throw new AppError('Product not found.', 404);
   return product;
 };
@@ -108,6 +115,18 @@ const getRelated = async (slug, limit = 8) => {
 const createProduct = async (payload) => Product.create(payload);
 
 const updateProduct = async (id, payload) => {
+  // Remember the outgoing slug so its URL keeps working as a redirect.
+  if (payload.slug) {
+    const current = await Product.findById(id).select('slug').lean();
+    if (!current) throw new AppError('Product not found.', 404);
+    if (current.slug !== payload.slug) {
+      const clash = await Product.exists({ _id: { $ne: id }, slug: payload.slug });
+      if (clash) throw new AppError('Another product already uses this slug.', 409);
+      payload = { ...payload, $addToSet: { previousSlugs: current.slug } };
+      // A slug that is current again must not also redirect to itself.
+      await Product.updateOne({ _id: id }, { $pull: { previousSlugs: payload.slug } });
+    }
+  }
   const product = await Product.findByIdAndUpdate(id, payload, {
     new: true,
     runValidators: true,

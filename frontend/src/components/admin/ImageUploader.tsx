@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { UploadCloud, X, Star, Loader2, AlertCircle } from 'lucide-react';
 import { api, ApiError } from '@/lib/api';
 import { cn, resolveImageUrl } from '@/lib/utils';
+import { useConfirm } from '@/components/providers/ConfirmProvider';
 
 interface UploadedFile {
   url: string;
@@ -41,6 +42,7 @@ export default function ImageUploader({
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const confirm = useConfirm();
 
   const remaining = maxImages - value.length;
   const canAddMore = remaining > 0;
@@ -101,7 +103,13 @@ export default function ImageUploader({
     uploadFiles(Array.from(e.dataTransfer.files));
   };
 
-  const removeAt = (index: number) => {
+  const removeAt = async (index: number) => {
+    const ok = await confirm({
+      title: mediaType === 'video' ? 'Remove this video?' : 'Remove this image?',
+      description: `It will be removed from "${label}" when you save. You can upload it again later.`,
+      confirmLabel: 'Remove',
+    });
+    if (!ok) return;
     setError(null);
     onChange(value.filter((_, i) => i !== index));
   };
@@ -116,12 +124,12 @@ export default function ImageUploader({
   return (
     <div className="space-y-3">
       <div className="flex items-baseline justify-between gap-3">
-        <label className="text-sm font-medium text-brand-ink">{label}</label>
-        <span className="text-xs text-brand-muted">
+        <label className="text-[13px] font-semibold text-admin-ink">{label}</label>
+        <span className="rounded-full bg-admin-subtle px-2 py-0.5 text-[11px] font-medium tabular-nums text-admin-muted ring-1 ring-admin-line">
           {value.length} / {maxImages}
         </span>
       </div>
-      {description && <p className="text-xs text-brand-muted -mt-1">{description}</p>}
+      {description && <p className="-mt-1 text-xs leading-relaxed text-admin-muted">{description}</p>}
 
       {canAddMore && (
         <div
@@ -141,11 +149,11 @@ export default function ImageUploader({
           onDragLeave={() => setDragging(false)}
           onDrop={handleDrop}
           className={cn(
-            'rounded-2xl border-2 border-dashed p-6 text-center transition-colors outline-none',
-            'focus-visible:ring-2 focus-visible:ring-brand-gold',
+            'rounded-2xl border-[1.5px] border-dashed p-7 text-center transition-colors outline-none',
+            'focus-visible:ring-4 focus-visible:ring-admin-gold/20',
             dragging
-              ? 'border-brand-gold bg-brand-gold/10'
-              : 'border-slate-300 bg-slate-50 hover:border-brand-gold hover:bg-brand-cream/40',
+              ? 'border-admin-gold bg-admin-gold-soft'
+              : 'border-admin-line-strong bg-admin-subtle hover:border-admin-gold hover:bg-admin-gold-soft/50',
             uploading ? 'cursor-wait opacity-70' : 'cursor-pointer'
           )}
         >
@@ -159,12 +167,10 @@ export default function ImageUploader({
             className="hidden"
           />
 
-          {uploading ? (
-            <Loader2 size={26} className="mx-auto mb-2 animate-spin text-brand-maroon" />
-          ) : (
-            <UploadCloud size={26} className="mx-auto mb-2 text-brand-maroon" />
-          )}
-          <p className="text-sm font-medium text-brand-ink">
+          <div className="mx-auto mb-3 grid h-11 w-11 place-items-center rounded-xl bg-admin-surface text-admin-gold-ink shadow-admin-card ring-1 ring-admin-line">
+            {uploading ? <Loader2 size={20} className="animate-spin" /> : <UploadCloud size={20} />}
+          </div>
+          <p className="text-sm font-semibold text-admin-ink">
             {uploading ? 'Uploading…' : `Click to upload or drag ${mediaType === 'video' ? 'videos' : 'images'} here`}
           </p>
           <p className="text-xs text-brand-muted mt-1">
@@ -184,7 +190,7 @@ export default function ImageUploader({
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {value.map((url, index) => (
             <div key={`${url}-${index}`} className="group relative">
-              <div className="relative aspect-square overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
+              <div className="relative aspect-square overflow-hidden rounded-xl border border-admin-line bg-admin-subtle shadow-[0_1px_2px_rgba(28,25,23,0.04)]">
                 {mediaType === 'video' ? <video src={resolveImageUrl(url)} controls playsInline preload="metadata" className="h-full w-full object-contain" /> : <Image
                   src={resolveImageUrl(url)}
                   alt={`${label} ${index + 1}`}
@@ -195,12 +201,12 @@ export default function ImageUploader({
                 />}
 
                 {showPrimaryBadge && index === 0 && (
-                  <span className="absolute left-1.5 top-1.5 rounded-full bg-brand-maroon px-2 py-0.5 text-[10px] font-semibold text-white">
+                  <span className="absolute left-1.5 top-1.5 rounded-full bg-gradient-to-b from-admin-gold-light to-admin-gold px-2 py-0.5 text-[10px] font-semibold text-admin-ink shadow-sm">
                     Primary
                   </span>
                 )}
 
-                <div className={cn('absolute flex items-center justify-center gap-2 transition-opacity', mediaType === 'video' ? 'right-2 top-2' : 'inset-0 bg-black/50 opacity-0 group-hover:opacity-100')}>
+                <div className={cn('absolute flex items-center justify-center gap-2 transition-opacity', mediaType === 'video' ? 'right-2 top-2' : 'inset-0 bg-[#fbf3e3]/75 opacity-0 backdrop-blur-[1px] group-hover:opacity-100 group-focus-within:opacity-100')}>
                   {showPrimaryBadge && index !== 0 && (
                     <button
                       type="button"

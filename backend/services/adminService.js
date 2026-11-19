@@ -44,11 +44,15 @@ const listCustomers = async (query) => {
   if (query.role) filter.role = query.role;
   else filter.role = 'customer';
 
-  if (query.email) filter.email = query.email.toLowerCase().trim();
+  if (query.email) {
+    // Case-insensitive "contains", escaped so the search box can't inject regex.
+    const term = query.email.toLowerCase().trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    filter.email = { $regex: term, $options: 'i' };
+  }
   if (query.isActive !== undefined) filter.isActive = query.isActive;
 
   const [items, total] = await Promise.all([
-    User.find(filter).sort(sort).lean(),
+    User.find(filter).sort(sort).skip(skip).limit(limit).lean(),
     User.countDocuments(filter),
   ]);
 

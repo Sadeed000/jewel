@@ -1,4 +1,4 @@
-import type { Paginated, Product } from './types';
+import type { Banner, BlogPost, Paginated, Product } from './types';
 
 /**
  * Server-side data access for React Server Components.
@@ -27,32 +27,57 @@ const NAV_REVALIDATE = 30;
 
 type Query = Record<string, string | number | boolean | undefined | null>;
 
-async function serverGet<T>(
+/**
+ * Cache tags. The admin panel calls /api/revalidate after publishing,
+ * unpublishing or editing an article, which purges everything tagged 'blog'
+ * (the listing, the article and the sitemap) at once.
+ */
+export const CACHE_TAGS = { blog: 'blog', products: 'products' } as const;
+
+/**
+ * GET with status. `status` is the HTTP status, or 0 when the API could not
+ * be reached — which lets a page tell "this product does not exist" (404 →
+ * notFound) apart from "the API is down" (render the client fallback).
+ */
+async function serverGetWithStatus<T>(
   path: string,
   query: Query = {},
-  revalidate: number = REVALIDATE
-): Promise<T | null> {
+  revalidate: number = REVALIDATE,
+  tags: string[] = []
+): Promise<{ data: T | null; status: number }> {
   const url = new URL(`${API_URL}${path}`);
   Object.entries(query).forEach(([k, v]) => {
     if (v !== undefined && v !== null && v !== '') url.searchParams.append(k, String(v));
   });
 
+  // Every catalogue read is purgeable with one tag after an admin edit.
+  const allTags = Array.from(new Set(path.startsWith('/products') ? [...tags, CACHE_TAGS.products] : tags));
+
   try {
     const res = await fetch(url.toString(), {
-      next: { revalidate },
+      next: { revalidate, tags: allTags },
       headers: { Accept: 'application/json' },
     });
     if (!res.ok) {
-      console.error(`[server-api] ${path} responded ${res.status}`);
-      return null;
+      if (res.status !== 404) console.error(`[server-api] ${path} responded ${res.status}`);
+      return { data: null, status: res.status };
     }
     const payload = await res.json();
-    return payload.data as T;
+    return { data: payload.data as T, status: res.status };
   } catch (err) {
     // Backend unreachable during build or at request time.
     console.error(`[server-api] ${path} failed:`, (err as Error).message);
-    return null;
+    return { data: null, status: 0 };
   }
+}
+
+async function serverGet<T>(
+  path: string,
+  query: Query = {},
+  revalidate: number = REVALIDATE,
+  tags: string[] = []
+): Promise<T | null> {
+  return (await serverGetWithStatus<T>(path, query, revalidate, tags)).data;
 }
 
 export interface ServerProductQuery extends Query {
@@ -91,10 +116,107 @@ export async function fetchProductPage(
   );
 }
 
+/**
+ * Like fetchProductPage, but returns null on failure instead of an empty page,
+ * so a client component seeded with it can still fetch for itself.
+ */
+export async function fetchProductPageOrNull(
+  query: ServerProductQuery = {}
+): Promise<Paginated<Product> | null> {
+  return serverGet<Paginated<Product>>('/products', query);
+}
+
 /** Fetch a single product by slug. Returns null when absent (drives notFound()). */
 export async function fetchProductBySlug(slug: string): Promise<Product | null> {
-  const data = await serverGet<{ product: Product }>(`/products/slug/${slug}`);
-  return data?.product ?? null;
+  return (await fetchProductResult(slug)).product;
+}
+
+/**
+ * Product plus lookup outcome: `missing` only when the API positively said
+ * 404. A product reached through an old slug comes back with its current
+ * slug, which the page turns into a permanent redirect.
+ */
+export async function fetchProductResult(
+  slug: string
+): Promise<{ product: Product | null; missing: boolean }> {
+  const { data, status } = await serverGetWithStatus<{ product: Product }>(
+    `/products/slug/${encodeURIComponent(slug)}`,
+    {},
+    REVALIDATE,
+    [CACHE_TAGS.products]
+  );
+  return { product: data?.product ?? null, missing: status === 404 };
+}
+
+export interface ProductFacets {
+  category: { _id: string | null; count: number }[];
+  type: { _id: string | null; count: number }[];
+}
+
+/** Product counts by metal category and type — decides which collections are worth indexing. */
+export async function fetchFacets(): Promise<ProductFacets | null> {
+  const data = await serverGet<{ facets: ProductFacets }>('/products/facets');
+  return data?.facets ?? null;
+}
+
+/** Every listed product, following pagination (100 is the API's per-page cap). */
+export async function fetchAllProducts(maxPages = 50): Promise<Product[]> {
+  const all: Product[] = [];
+  for (let page = 1; page <= maxPages; page += 1) {
+    const data = await serverGet<Paginated<Product>>('/products', { limit: 100, page, sort: '-updatedAt' });
+    if (!data) break;
+    all.push(...data.items);
+    if (!data.pagination.hasNext) break;
+  }
+  return all;
+}
+
+/* ───────────── Blog ───────────── */
+
+/** Published articles only — the public API never returns drafts. */
+export async function fetchBlogPosts(
+  query: { page?: number; limit?: number; category?: string } = {}
+): Promise<Paginated<BlogPost> | null> {
+  return serverGet<Paginated<BlogPost>>('/content/blog', query, REVALIDATE, [CACHE_TAGS.blog]);
+}
+
+export async function fetchAllBlogPosts(): Promise<BlogPost[]> {
+  const all: BlogPost[] = [];
+  for (let page = 1; page <= 50; page += 1) {
+    const data = await fetchBlogPosts({ page, limit: 100 });
+    if (!data) break;
+    all.push(...data.items);
+    if (!data.pagination.hasNext) break;
+  }
+  return all;
+}
+
+export async function fetchBlogPostResult(
+  slug: string
+): Promise<{ post: BlogPost | null; missing: boolean }> {
+  const { data, status } = await serverGetWithStatus<{ post: BlogPost }>(
+    `/content/blog/${encodeURIComponent(slug)}`,
+    {},
+    REVALIDATE,
+    [CACHE_TAGS.blog]
+  );
+  return { post: data?.post ?? null, missing: status === 404 };
+}
+
+/** Related products for a product page; null on failure. */
+export async function fetchRelatedProducts(slug: string, limit = 8): Promise<Product[] | null> {
+  const data = await serverGet<{ items: Product[] }>(
+    `/products/slug/${encodeURIComponent(slug)}/related`,
+    { limit }
+  );
+  return data?.items ?? null;
+}
+
+/** Active banners for a placement; null on failure. */
+export async function fetchBanners(placement: Banner['placement']): Promise<Banner[] | null> {
+  // Banners are scheduled (startsAt/endsAt) so keep them reasonably fresh.
+  const data = await serverGet<{ banners: Banner[] }>('/content/banners', { placement }, 60);
+  return data?.banners ?? null;
 }
 
 export interface ServerSubCategory {

@@ -3,6 +3,14 @@ import Image from 'next/image';
 import { Sparkles, Camera, Smartphone, Monitor } from 'lucide-react';
 import Breadcrumb from '@/components/common/Breadcrumb';
 import TryOnGallery from './TryOnGallery';
+import type { Metadata } from 'next';
+import { pageMetadata } from '@/lib/seo';
+
+export const metadata: Metadata = pageMetadata({
+  title: 'Virtual Try-On – See Rings & Earrings on You',
+  description: 'Try rings, earrings and pendants on with your phone or laptop camera before you buy. Works in the browser, no app needed.',
+  path: '/virtual-try-on',
+});
 
 export default function VirtualTryOnPage() {
   return (
@@ -11,7 +19,7 @@ export default function VirtualTryOnPage() {
 
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-brand-maroon-dark via-brand-maroon to-brand-maroon-dark" />
-        <Image src="https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=1800" alt="" fill className="object-cover opacity-20" />
+        <Image src="https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009707/ratnapankh/library/photo-1611591437281-460bfbe1220a.jpg" alt="" fill className="object-cover opacity-20" />
         <div className="container-custom relative py-20 text-white text-center">
           <Sparkles className="mx-auto text-brand-gold-light" size={36} />
           <h1 className="font-display text-5xl md:text-6xl mt-4">Virtual Try-On</h1>

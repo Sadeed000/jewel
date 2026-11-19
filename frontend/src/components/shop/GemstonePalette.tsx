@@ -6,12 +6,12 @@ import Link from 'next/link';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 const stones = [
-  { key: 'emerald', label: 'Emerald', color: '#0a6e54', image: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=600&auto=format&fit=crop' },
-  { key: 'ruby', label: 'Ruby', color: '#a01a3a', image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=600&auto=format&fit=crop' },
-  { key: 'sapphire', label: 'Sapphire', color: '#1e3a8a', image: 'https://images.unsplash.com/photo-1573408301185-9146fe634ad0?w=600&auto=format&fit=crop' },
-  { key: 'tanzanite', label: 'Tanzanite', color: '#5d3fd3', image: 'https://images.unsplash.com/photo-1591437694631-c2d04bb8b9c5?w=600&auto=format&fit=crop' },
-  { key: 'pearl', label: 'Pearl', color: '#e8e2d4', image: 'https://images.unsplash.com/photo-1535632066274-36f4c5f29f5f?w=600&auto=format&fit=crop' },
-  { key: 'coral', label: 'Coral', color: '#e07856', image: 'https://images.unsplash.com/photo-1602173574767-37ac01994b2a?w=600&auto=format&fit=crop' },
+  { key: 'emerald', label: 'Emerald', color: '#0a6e54', image: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009707/ratnapankh/library/photo-1611591437281-460bfbe1220a.jpg' },
+  { key: 'ruby', label: 'Ruby', color: '#a01a3a', image: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009705/ratnapankh/library/photo-1605100804763-247f67b3557e.jpg' },
+  { key: 'sapphire', label: 'Sapphire', color: '#1e3a8a', image: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009725/ratnapankh/library/photo-1573408301185-9146fe634ad0.jpg' },
+  { key: 'tanzanite', label: 'Tanzanite', color: '#5d3fd3', image: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795007337/ratnapankh/heroes/gemstone-emerald-necklace-navy.jpg' },
+  { key: 'pearl', label: 'Pearl', color: '#e8e2d4', image: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795007344/ratnapankh/heroes/earrings-sapphire-drops.jpg' },
+  { key: 'coral', label: 'Coral', color: '#e07856', image: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009724/ratnapankh/library/photo-1602173574767-37ac01994b2a.jpg' },
 ];
 
 export default function GemstonePalette() {

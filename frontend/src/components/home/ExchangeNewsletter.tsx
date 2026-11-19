@@ -3,21 +3,35 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { useSubscribeNewsletter } from '@/hooks/useMisc';
+import { useToast } from '@/components/providers/ToastProvider';
+import { ApiError } from '@/lib/api';
 
 export default function ExchangeNewsletter() {
   const [email, setEmail] = useState('');
   const subscribe = useSubscribeNewsletter();
+  const toast = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) return;
+    const value = email.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value)) {
+      toast.error('Please check your email', { description: 'Enter a valid email address, like name@example.com.' });
+      return;
+    }
     try {
-      await subscribe.mutateAsync({ email, source: 'homepage-newsletter' });
+      await subscribe.mutateAsync({ email: value, source: 'homepage-newsletter' });
       setEmail('');
-      // Toast success message here
-      alert('Subscribed successfully! Check your inbox.');
+      toast.success("You're subscribed", { description: "We'll send new collections and offers to your inbox." });
     } catch (err) {
-      alert('Subscription failed. Please try again.');
+      const description =
+        err instanceof ApiError
+          ? err.status === 429
+            ? 'Too many attempts — please wait a minute and try again.'
+            : err.status >= 500
+              ? 'Something went wrong on our side. Please try again in a moment.'
+              : err.message
+          : 'We could not reach our servers. Check your connection and try again.';
+      toast.error("Couldn't subscribe", { description });
     }
   };
 
@@ -25,7 +39,7 @@ export default function ExchangeNewsletter() {
     <section className="relative py-20 overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-brand-maroon-dark via-brand-maroon to-brand-maroon-dark" />
       <Image
-        src="https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=1800"
+        src="https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009705/ratnapankh/library/photo-1605100804763-247f67b3557e.jpg"
         alt=""
         fill
         className="object-cover opacity-15"
@@ -45,7 +59,7 @@ export default function ExchangeNewsletter() {
         <div className="bg-white/10 backdrop-blur border border-white/20 rounded-xl p-8">
           <h3 className="font-display text-2xl">Stay in the loop</h3>
           <p className="text-sm text-white/80 mt-1">Get early access to new collections, gold rate alerts, and exclusive offers.</p>
-          <form onSubmit={handleSubmit} className="mt-5 flex flex-col sm:flex-row gap-3">
+          <form onSubmit={handleSubmit} noValidate className="mt-5 flex flex-col sm:flex-row gap-3">
             <input
               type="email"
               required
@@ -63,9 +77,6 @@ export default function ExchangeNewsletter() {
               {subscribe.isPending ? 'Subscribing...' : 'Subscribe'}
             </button>
           </form>
-          {subscribe.isError && (
-            <p className="text-red-300 text-xs mt-2">Failed to subscribe. Please try again.</p>
-          )}
         </div>
       </div>
     </section>

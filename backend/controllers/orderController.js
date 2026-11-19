@@ -60,15 +60,16 @@ const failPayment = catchAsync(async (req, res) => {
  * signature is computed over the exact bytes Razorpay signed.
  */
 const razorpayWebhook = catchAsync(async (req, res) => {
-  const result = await paymentService.handleWebhook(
-    req.body,
-    req.get('x-razorpay-signature')
-  );
+  // The global JSON parser runs first and stores the untouched bytes on
+  // req.rawBody; fall back to a Buffer body if this route is ever mounted raw.
+  const raw = req.rawBody || (Buffer.isBuffer(req.body) ? req.body : Buffer.from(''));
+  const result = await paymentService.handleWebhook(raw, req.get('x-razorpay-signature'));
   ok(res, result);
 });
 
 // Admin
 const updateStatus = catchAsync(async (req, res) => {
+  // Body validated by orderValidator.updateStatus.
   const order = await orderService.updateOrderStatus(req.params.id, req.body.status, req.body.note);
   ok(res, { order }, 'Order status updated');
 });

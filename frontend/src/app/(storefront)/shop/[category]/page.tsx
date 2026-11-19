@@ -1,12 +1,17 @@
 import Link from 'next/link';
 import Breadcrumb from '@/components/common/Breadcrumb';
 import FilterSidebar from '@/components/product/FilterSidebar';
-import ProductCard from '@/components/product/ProductCard';
+import ProductGrid from '@/components/product/ProductGrid';
 import { fetchProductPage } from '@/lib/server-api';
 import { searchParamsToFilters } from '@/lib/filters';
 import SortSelect from '@/components/product/SortSelect';
 import Pagination from '@/components/product/Pagination';
 import Image from 'next/image';
+import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
+import { METAL_SLUGS, collectionCopy, collectionIndexing, isKnownCollection } from '@/lib/collections';
+import { JsonLd, breadcrumbLd, pageMetadata } from '@/lib/seo';
+import { COLLECTION_HERO, hero } from '@/lib/imagery';
 
 const PAGE_SIZE = 24;
 
@@ -14,40 +19,42 @@ const PAGE_SIZE = 24;
  * This route serves both metal categories (/shop/gold) and product types
  * (/shop/rings), so map the slug onto whichever filter the API expects.
  */
-const CATEGORY_SLUGS = ['gold', 'diamond', 'gemstone', 'platinum', 'silver'];
-const TYPE_SLUGS = [
-  'rings', 'earrings', 'pendants', 'necklaces', 'chains',
-  'bracelets', 'mangalsutra', 'bangles', 'nose-pin',
-];
-
 const filtersForSlug = (slug: string) => {
   if (slug === 'jewellery' || slug === 'all') return {};
-  if (CATEGORY_SLUGS.includes(slug)) return { category: slug };
-  if (TYPE_SLUGS.includes(slug)) return { type: slug };
-  // Unknown slug: match nothing so the page shows an honest empty state
-  // rather than silently listing the entire catalogue.
-  return { category: '__none__' };
+  if ((METAL_SLUGS as readonly string[]).includes(slug)) return { category: slug };
+  return { type: slug };
 };
 
-export async function generateMetadata({ params }: { params: { category: string } }) {
-  const cat = params.category.replace(/-/g, ' ');
-  return {
-    title: `${cat.replace(/\b\w/g, (c) => c.toUpperCase())} Jewellery`,
-    description: `Browse our curated collection of ${cat} jewellery — rings, earrings, pendants and more.`,
-  };
-}
-
-export default async function CategoryPage({
-  params,
-  searchParams,
-}: {
+type Props = {
   params: { category: string };
   searchParams: Record<string, string | string[] | undefined>;
-}) {
-  // Normalise to single values — the filters never emit repeated keys.
-  const flatParams = Object.fromEntries(
+};
+
+// Normalise to single values — the filters never emit repeated keys.
+const flatten = (searchParams: Props['searchParams']) =>
+  Object.fromEntries(
     Object.entries(searchParams).map(([k, v]) => [k, Array.isArray(v) ? v[0] : v])
   ) as Record<string, string | undefined>;
+
+export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
+  // Thrown from metadata so the response carries a real 404 status.
+  if (!isKnownCollection(params.category)) notFound();
+  const copy = collectionCopy(params.category);
+  const { canonical, noindex, page } = collectionIndexing(params.category, flatten(searchParams));
+  return pageMetadata({
+    title: page > 1 ? `${copy.title} – Page ${page}` : copy.title,
+    description: copy.description,
+    path: canonical,
+    noindex,
+  });
+}
+
+export default async function CategoryPage({ params, searchParams }: Props) {
+  // Unknown collections are a real 404, not an empty 200 page.
+  if (!isKnownCollection(params.category)) notFound();
+
+  const flatParams = flatten(searchParams);
+  const copy = collectionCopy(params.category);
 
   const page = Math.max(1, Number(flatParams.page) || 1);
 
@@ -59,23 +66,32 @@ export default async function CategoryPage({
     page,
     limit: PAGE_SIZE,
   });
-  const title = params.category.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  const title = copy.h1;
 
   return (
     <div>
+      <JsonLd
+        data={breadcrumbLd([
+          { name: 'Home', path: '/' },
+          { name: title, path: `/shop/${params.category === 'all' ? 'jewellery' : params.category}` },
+        ])}
+      />
       {/* Banner */}
-      <div className="relative h-32 md:h-48 overflow-hidden">
+      <div className="relative h-36 md:h-56 overflow-hidden">
         <Image
-          src="https://images.unsplash.com/photo-1611652022419-a9419f74343d?w=1800"
-          alt={title}
+          src={hero(COLLECTION_HERO[params.category] ?? 'jewelleryRoseEmeraldSet', '3:1')}
+          alt=""
           fill
+          priority
+          quality={85}
+          sizes="100vw"
           className="object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/50 to-black/20" />
+        <div className="absolute inset-0 bg-gradient-to-r from-brand-maroon-dark/80 via-brand-maroon-dark/45 to-transparent" />
         <div className="container-custom relative h-full flex items-center text-white">
           <div>
-            <p className="text-xs uppercase tracking-[0.3em] opacity-80">Shop</p>
-            <h1 className="font-display text-4xl md:text-5xl">{title}</h1>
+            <p className="text-[11px] uppercase tracking-[0.3em] text-brand-gold-light">Shop</p>
+            <h1 className="font-display text-4xl md:text-6xl mt-1">{title}</h1>
           </div>
           <div className="ml-auto hidden md:block text-right">
             <p className="font-display text-2xl">10% off*</p>
@@ -91,13 +107,20 @@ export default async function CategoryPage({
         ]}
       />
 
+      {page === 1 && (
+        <p className="container-custom -mt-2 mb-6 max-w-3xl text-sm leading-relaxed text-brand-muted">
+          {copy.intro}
+        </p>
+      )}
+
       <div className="container-custom flex flex-col md:flex-row gap-8 pb-16">
         <FilterSidebar />
 
         <div className="flex-1">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between gap-4 mb-8 pb-4 border-b border-brand-line">
             <p className="text-sm text-brand-muted">
-              <span className="text-brand-ink font-medium">{pagination.total}</span> Products
+              <span className="text-brand-ink font-semibold tabular-nums">{pagination.total}</span>{' '}
+              {pagination.total === 1 ? 'piece' : 'pieces'}
             </p>
             <SortSelect />
           </div>
@@ -118,11 +141,15 @@ export default async function CategoryPage({
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-5">
-              {list.map((p) => (
-                <ProductCard key={p._id} product={p} />
-              ))}
-            </div>
+            // Keyed on the query string so every filter / sort / page change
+            // cross-fades to the new results instead of snapping.
+            <ProductGrid
+              products={list}
+              columns="sidebar"
+              animationKey={new URLSearchParams(
+                Object.entries(flatParams).filter(([, v]) => v != null) as [string, string][]
+              ).toString()}
+            />
           )}
 
           {/* Pagination */}

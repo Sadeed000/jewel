@@ -157,7 +157,11 @@ const run = async () => {
   await Promise.all([
     Banner.deleteMany({}).then(() => Banner.insertMany(banners)),
     Testimonial.deleteMany({}).then(() => Testimonial.insertMany(testimonials)),
-    BlogPost.deleteMany({}).then(() => BlogPost.insertMany(blogPosts)),
+    // Articles are now written in the admin panel, so never wipe them: the
+    // demo posts are only inserted into an empty collection, and as drafts.
+    BlogPost.estimatedDocumentCount().then((n) =>
+      n ? null : BlogPost.insertMany(blogPosts.map((p) => ({ ...p, isPublished: false, publishedAt: null })))
+    ),
     Category.deleteMany({}).then(() => Category.insertMany(categories)),
     SiteSettings.findOneAndUpdate({ key: 'main' }, settings, { upsert: true, new: true }),
   ]);

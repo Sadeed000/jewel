@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useProducts } from '@/hooks/useProducts';
-import ProductCard from '@/components/product/ProductCard';
+import ProductGrid from '@/components/product/ProductGrid';
 import { ProductGridSkeleton, EmptyState } from '@/components/common/Loading';
 
 export function AllJewelleryProducts() {
@@ -65,10 +65,6 @@ export function AllJewelleryProducts() {
   }
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5">
-      {items.map((p) => (
-        <ProductCard key={p._id} product={p} />
-      ))}
-    </div>
+    <ProductGrid products={items} animationKey={filter} />
   );
 }

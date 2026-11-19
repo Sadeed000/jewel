@@ -37,9 +37,9 @@ const getGoldRate = catchAsync(async (req, res) => {
 });
 
 /* ───────────── Digital Gold ───────────── */
+// Query validated by miscValidators.digitalGoldCalculate.
 const calculate = catchAsync(async (req, res) => {
-  const monthlyAmount = parseInt(req.query.monthlyAmount, 10);
-  const tenureMonths = parseInt(req.query.tenureMonths, 10);
+  const { monthlyAmount, tenureMonths } = req.query;
   const result = miscService.calculateGoldenHarvest({ monthlyAmount, tenureMonths });
   ok(res, result);
 });

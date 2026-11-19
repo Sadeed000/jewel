@@ -59,6 +59,18 @@ const deleteBlogPost = catchAsync(async (req, res) => {
   await contentService.deleteBlogPost(req.params.id);
   noContent(res);
 });
+const resolveSlugRedirect = catchAsync(async (req, res) => {
+  const to = await contentService.resolveSlugRedirect(req.query.type, req.query.slug);
+  ok(res, { to });
+});
+const adminListBlogPosts = catchAsync(async (req, res) => {
+  const result = await contentService.adminListBlogPosts(req.query);
+  ok(res, result);
+});
+const adminGetBlogPost = catchAsync(async (req, res) => {
+  const post = await contentService.adminGetBlogPost(req.params.id);
+  ok(res, { post });
+});
 
 /* Site settings */
 const getSiteSettings = catchAsync(async (req, res) => {
@@ -96,6 +108,7 @@ module.exports = {
   listBanners, createBanner, updateBanner, deleteBanner,
   listTestimonials, createTestimonial, updateTestimonial, deleteTestimonial,
   listBlogPosts, getBlogPostBySlug, createBlogPost, updateBlogPost, deleteBlogPost,
+  adminListBlogPosts, adminGetBlogPost, resolveSlugRedirect,
   getSiteSettings, updateSiteSettings,
   listCategories, getCategoryBySlug, createCategory, updateCategory, deleteCategory,
 };

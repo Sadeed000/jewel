@@ -1,5 +1,14 @@
 import Image from 'next/image';
+import type { Metadata } from 'next';
 import Breadcrumb from '@/components/common/Breadcrumb';
+import { pageMetadata } from '@/lib/seo';
+import { BRAND } from '@/lib/brand';
+
+export const metadata: Metadata = pageMetadata({
+  title: `About ${BRAND}`,
+  description: `The story behind ${BRAND} — the jewellery we make, how we choose our pieces and how to reach us.`,
+  path: '/about',
+});
 
 export default function AboutPage() {
   return (
@@ -7,7 +16,7 @@ export default function AboutPage() {
       <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'About Us' }]} />
 
       <section className="relative h-[40vh] overflow-hidden">
-        <Image src="https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=1800" alt="Aurelia heritage" fill className="object-cover" />
+        <Image src="https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009705/ratnapankh/library/photo-1605100804763-247f67b3557e.jpg" alt="Aurelia heritage" fill className="object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-black/20" />
         <div className="absolute inset-0 grid place-items-center text-white text-center">
           <div>

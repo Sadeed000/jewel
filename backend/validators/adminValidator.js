@@ -14,7 +14,8 @@ const adminCustomerQuery = Joi.object({
   limit: Joi.number().integer().min(1).max(100),
   sort: Joi.string().allow('', null),
   role: Joi.string().valid('customer', 'admin'),
-  email: Joi.string().email().lowercase().trim().allow('', null),
+  // Partial input from the admin search box ("priya", "@gmail"), not a full address.
+  email: Joi.string().lowercase().trim().max(100).allow('', null),
   isActive: Joi.boolean().truthy('true').falsy('false'),
 });
 

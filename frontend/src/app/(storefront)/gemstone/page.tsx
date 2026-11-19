@@ -1,5 +1,6 @@
 
 import type { Metadata } from 'next';
+import { pageMetadata } from '@/lib/seo';
 import Image from 'next/image';
 import Link from 'next/link';
 import Breadcrumb from '@/components/common/Breadcrumb';
@@ -8,18 +9,21 @@ import BrandPromises from '@/components/shop/BrandPromises';
 import ShopByOccasion from '@/components/shop/ShopByOccasion';
 import StyleInspiration from '@/components/shop/StyleInspiration';
 import CollectionStory from '@/components/shop/CollectionStory';
+import { hero, tile } from '@/lib/imagery';
 
-export const metadata: Metadata = {
-  title: 'Gemstone Jewellery — Emerald, Ruby, Sapphire, Tanzanite & Pearl',
-  description: 'A celebration of natural gemstones. Curated jewellery featuring emerald, ruby, sapphire, tanzanite, pearl, and coral cabochons.',
-};
+export const metadata: Metadata = pageMetadata({
+  title: "Gemstone Jewellery – Coloured Stone Rings, Earrings & Pendants",
+  description:
+    "Shop gemstone jewellery online in India — coloured-stone rings, earrings and pendants with stone and metal details on every piece.",
+  path: '/gemstone',
+});
 
 const fiveTruths = [
-  { label: 'Natural', image: 'https://images.unsplash.com/photo-1591437694631-c2d04bb8b9c5?w=600&auto=format&fit=crop' },
-  { label: 'Rare', image: 'https://images.unsplash.com/photo-1602173574767-37ac01994b2a?w=600&auto=format&fit=crop' },
-  { label: 'Sourced', image: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=600&auto=format&fit=crop' },
-  { label: 'Crafted', image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=600&auto=format&fit=crop' },
-  { label: 'Eternal', image: 'https://images.unsplash.com/photo-1573408301185-9146fe634ad0?w=600&auto=format&fit=crop' },
+  { label: 'Natural', image: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795007337/ratnapankh/heroes/gemstone-emerald-necklace-navy.jpg' },
+  { label: 'Rare', image: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009724/ratnapankh/library/photo-1602173574767-37ac01994b2a.jpg' },
+  { label: 'Sourced', image: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009707/ratnapankh/library/photo-1611591437281-460bfbe1220a.jpg' },
+  { label: 'Crafted', image: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009705/ratnapankh/library/photo-1605100804763-247f67b3557e.jpg' },
+  { label: 'Eternal', image: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009725/ratnapankh/library/photo-1573408301185-9146fe634ad0.jpg' },
 ];
 
 const occasions = [
@@ -28,11 +32,11 @@ const occasions = [
     label: 'Extraordinary Hues',
     title: 'Extraordinary Hues',
     copy: 'For the women whose presence is its own colour. The stones she wears — bold, radiant, unforgettable.',
-    modelImage: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=900&auto=format&fit=crop',
+    modelImage: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009707/ratnapankh/library/photo-1611591437281-460bfbe1220a.jpg',
     productImages: [
-      'https://images.unsplash.com/photo-1535632787350-4e68ef0ac584?w=300&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1611652022419-a9419f74343d?w=300&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=300&auto=format&fit=crop',
+      'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009727/ratnapankh/library/photo-1535632787350-4e68ef0ac584.jpg',
+      'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009721/ratnapankh/library/photo-1611652022419-a9419f74343d.jpg',
+      'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009705/ratnapankh/library/photo-1605100804763-247f67b3557e.jpg',
     ],
   },
   {
@@ -40,11 +44,11 @@ const occasions = [
     label: 'Understated Glow',
     title: 'Understated Glow',
     copy: 'A whisper of colour. Stones that lend just enough light, never too much.',
-    modelImage: 'https://images.unsplash.com/photo-1573408301185-9146fe634ad0?w=900&auto=format&fit=crop',
+    modelImage: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009725/ratnapankh/library/photo-1573408301185-9146fe634ad0.jpg',
     productImages: [
-      'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=300&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1535632066274-36f4c5f29f5f?w=300&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1611652022419-a9419f74343d?w=300&auto=format&fit=crop',
+      'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009723/ratnapankh/library/photo-1599643478518-a784e5dc4c8f.jpg',
+      'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795007344/ratnapankh/heroes/earrings-sapphire-drops.jpg',
+      'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009721/ratnapankh/library/photo-1611652022419-a9419f74343d.jpg',
     ],
   },
   {
@@ -52,11 +56,11 @@ const occasions = [
     label: 'Heritage Hues',
     title: 'Heritage Hues',
     copy: 'Stones favoured across generations. Pieces that travel through families like stories.',
-    modelImage: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=900&auto=format&fit=crop',
+    modelImage: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009705/ratnapankh/library/photo-1605100804763-247f67b3557e.jpg',
     productImages: [
-      'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=300&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1602173574767-37ac01994b2a?w=300&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1583292650898-7d22cd27ca6f?w=300&auto=format&fit=crop',
+      'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009707/ratnapankh/library/photo-1611591437281-460bfbe1220a.jpg',
+      'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009724/ratnapankh/library/photo-1602173574767-37ac01994b2a.jpg',
+      'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009728/ratnapankh/library/photo-1583292650898-7d22cd27ca6f.jpg',
     ],
   },
 ];
@@ -71,10 +75,10 @@ export default function GemstonePage() {
       <section className="relative overflow-hidden bg-gradient-to-b from-white to-purple-50/30">
         {/* Decorative scattered florals */}
         <div className="absolute -bottom-8 -left-8 w-48 md:w-64 h-48 md:h-64 pointer-events-none opacity-80">
-          <Image src="https://images.unsplash.com/photo-1591437694631-c2d04bb8b9c5?w=300&auto=format&fit=crop" alt="Decorative floral" fill className="object-cover rounded-full blur-md" />
+          <Image src="https://res.cloudinary.com/dnsulnx1r/image/upload/v1795007337/ratnapankh/heroes/gemstone-emerald-necklace-navy.jpg" alt="Decorative floral" fill className="object-cover rounded-full blur-md" />
         </div>
         <div className="absolute -bottom-8 -right-8 w-48 md:w-64 h-48 md:h-64 pointer-events-none opacity-70">
-          <Image src="https://images.unsplash.com/photo-1602173574767-37ac01994b2a?w=300&auto=format&fit=crop" alt="Decorative floral" fill className="object-cover rounded-full blur-md" />
+          <Image src="https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009724/ratnapankh/library/photo-1602173574767-37ac01994b2a.jpg" alt="Decorative floral" fill className="object-cover rounded-full blur-md" />
         </div>
 
         <div className="container-custom relative py-12 md:py-20 grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
@@ -101,8 +105,8 @@ export default function GemstonePage() {
           <div className="relative aspect-square max-w-md mx-auto w-full">
             <div className="absolute inset-0 bg-gradient-to-br from-purple-200/40 via-transparent to-violet-300/30 rounded-full blur-3xl" />
             <Image
-              src="https://images.unsplash.com/photo-1591437694631-c2d04bb8b9c5?w=900&auto=format&fit=crop"
-              alt="Tanzanite gemstone"
+              src={tile('gemstoneEmeraldModel', '1:1', 1200)}
+              alt="Emerald necklace and earrings"
               fill
               className="object-cover rounded-full shadow-xl"
               priority
@@ -115,8 +119,9 @@ export default function GemstonePage() {
       {/* Full-bleed lifestyle banner — A World of Colour Awaits */}
       <section className="relative h-[280px] md:h-[420px] overflow-hidden">
         <Image
-          src="https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=1800&auto=format&fit=crop"
-          alt="A world of colour awaits"
+          src={hero('gemstoneEmeraldNavy', '3:1')}
+          alt="Emerald necklace on deep blue velvet"
+          quality={85}
           fill
           className="object-cover"
           sizes="100vw"
@@ -148,7 +153,7 @@ export default function GemstonePage() {
             { label: 'Pendants', icon: '◇' },
             { label: 'Necklaces', icon: '⌣' },
           ].map((c, i) => (
-            <Link key={c.label} href="#" className={`flex-none flex flex-col items-center gap-2 group ${i === 0 ? 'border-b-2 border-brand-maroon pb-2 -mb-px' : ''}`}>
+            <Link key={c.label} href={c.label === 'All' ? '/shop/gemstone' : `/shop/${c.label.toLowerCase()}?category=gemstone`} className={`flex-none flex flex-col items-center gap-2 group ${i === 0 ? 'border-b-2 border-brand-maroon pb-2 -mb-px' : ''}`}>
               <span className={`text-2xl ${i === 0 ? 'text-brand-maroon' : 'text-brand-muted group-hover:text-brand-maroon'} transition-colors`}>{c.icon}</span>
               <span className={`text-xs uppercase tracking-widest ${i === 0 ? 'text-brand-maroon font-semibold' : 'text-brand-muted group-hover:text-brand-maroon'} transition-colors`}>{c.label}</span>
             </Link>
@@ -159,10 +164,10 @@ export default function GemstonePage() {
       {/* Effortlessly Chic / Perfectly Polished / Subtly Striking / Gracefully etc. */}
       <section className="container-custom py-12 grid grid-cols-1 md:grid-cols-2 gap-6">
         {[
-          { kind: 'Earrings', tag: 'Effortlessly Chic', img: 'https://images.unsplash.com/photo-1535632787350-4e68ef0ac584?w=600&auto=format&fit=crop' },
-          { kind: 'Rings', tag: 'Perfectly Poised', img: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=600&auto=format&fit=crop' },
-          { kind: 'Pendants', tag: 'Subtly Striking', img: 'https://images.unsplash.com/photo-1573408301185-9146fe634ad0?w=600&auto=format&fit=crop' },
-          { kind: 'Neckwear', tag: 'Gracefully Bold', img: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=600&auto=format&fit=crop' },
+          { kind: 'Earrings', tag: 'Effortlessly Chic', img: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009727/ratnapankh/library/photo-1535632787350-4e68ef0ac584.jpg' },
+          { kind: 'Rings', tag: 'Perfectly Poised', img: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009705/ratnapankh/library/photo-1605100804763-247f67b3557e.jpg' },
+          { kind: 'Pendants', tag: 'Subtly Striking', img: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009725/ratnapankh/library/photo-1573408301185-9146fe634ad0.jpg' },
+          { kind: 'Neckwear', tag: 'Gracefully Bold', img: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009707/ratnapankh/library/photo-1611591437281-460bfbe1220a.jpg' },
         ].map((c) => (
           <Link key={c.kind} href={`/${c.kind.toLowerCase()}`} className="group relative bg-white border border-brand-cream-dark rounded-lg overflow-hidden flex">
             <div className="relative w-32 md:w-40 flex-none aspect-square bg-brand-cream">
@@ -212,9 +217,9 @@ export default function GemstonePage() {
         title="Style Inspiration"
         subtitle="Discover a curated selection of remarkable gemstones, celebrated for their beauty, character, and timeless allure."
         items={[
-          { image: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=600&auto=format&fit=crop' },
-          { image: 'https://images.unsplash.com/photo-1573408301185-9146fe634ad0?w=600&auto=format&fit=crop' },
-          { image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=600&auto=format&fit=crop' },
+          { image: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009707/ratnapankh/library/photo-1611591437281-460bfbe1220a.jpg' },
+          { image: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009725/ratnapankh/library/photo-1573408301185-9146fe634ad0.jpg' },
+          { image: 'https://res.cloudinary.com/dnsulnx1r/image/upload/v1795009705/ratnapankh/library/photo-1605100804763-247f67b3557e.jpg' },
         ]}
       />
 

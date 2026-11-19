@@ -4,7 +4,10 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Check, CreditCard, Wallet, Building2, Smartphone, Truck } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import {
+  Check, CreditCard, Wallet, Building2, Smartphone, Truck, Lock, Store, MapPin, RotateCcw, Headphones, ShoppingBag,
+} from 'lucide-react';
 import Breadcrumb from '@/components/common/Breadcrumb';
 import { useUnifiedCart } from '@/hooks/useUnifiedCart';
 import { useCurrentUser, useLogin } from '@/hooks/useAuth';
@@ -20,6 +23,8 @@ import { calculateTotals } from '@/lib/pricing';
 import { formatPrice, cn } from '@/lib/utils';
 import { SectionLoader } from '@/components/common/Loading';
 import { useToast } from '@/components/providers/ToastProvider';
+import Button from '@/components/ui/Button';
+import { transition } from '@/lib/motion';
 import type { Address, Order } from '@/lib/types';
 
 const steps = ['Login', 'Address', 'Payment', 'Review'];
@@ -66,6 +71,26 @@ const loadRazorpay = (): Promise<boolean> =>
     document.body.appendChild(script);
   });
 
+/** Custom radio dot used by the address and payment cards. */
+function RadioDot({ checked }: { checked: boolean }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        'grid h-5 w-5 flex-none place-items-center rounded-full border-2 transition-colors duration-base',
+        checked ? 'border-brand-maroon' : 'border-brand-line'
+      )}
+    >
+      <motion.span
+        initial={false}
+        animate={{ scale: checked ? 1 : 0 }}
+        transition={{ type: 'spring', stiffness: 600, damping: 25 }}
+        className="h-2.5 w-2.5 rounded-full bg-brand-maroon"
+      />
+    </span>
+  );
+}
+
 export default function CheckoutPage() {
   const router = useRouter();
   const toast = useToast();
@@ -81,6 +106,8 @@ export default function CheckoutPage() {
   const markFailed = useMarkPaymentFailed();
 
   const [step, setStep] = useState(1);
+  // +1 forward / -1 back — drives the slide direction between steps.
+  const [direction, setDirection] = useState(1);
   const [credentials, setCredentials] = useState({ email: '', password: '' });
   const [loginError, setLoginError] = useState('');
 
@@ -143,10 +170,10 @@ export default function CheckoutPage() {
   if (items.length === 0) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center text-center px-4">
-        <div className="w-32 h-32 rounded-full bg-brand-cream grid place-items-center mb-6">
-          <span className="text-5xl">🛍️</span>
+        <div className="w-28 h-28 rounded-full bg-white shadow-card ring-1 ring-brand-line grid place-items-center mb-8">
+          <ShoppingBag size={40} strokeWidth={1.25} className="text-brand-gold-dark" />
         </div>
-        <h1 className="font-display text-3xl text-brand-ink">Your bag is empty</h1>
+        <h1 className="font-display text-4xl text-brand-ink">Your bag is empty</h1>
         <p className="text-sm text-brand-muted mt-2">Add something you love before checking out.</p>
         <Link href="/jewellery" className="btn-primary mt-6">Continue Shopping</Link>
       </div>
@@ -194,6 +221,7 @@ export default function CheckoutPage() {
         const errors = validateAddress(address);
         if (Object.keys(errors).length) {
           setAddressErrors(errors);
+          setDirection(-1);
           setStep(2);
           setPlacing(false);
           return;
@@ -311,21 +339,43 @@ export default function CheckoutPage() {
     }
   };
 
-  const field = (key: keyof AddressForm, placeholder: string, className = '') => (
+
+  const field = (
+    key: keyof AddressForm,
+    label: string,
+    className = '',
+    inputProps: React.InputHTMLAttributes<HTMLInputElement> = {}
+  ) => (
     <div className={className}>
+      <label htmlFor={`addr-${key}`} className="block text-xs font-medium text-brand-ink mb-1.5">
+        {label}
+      </label>
       <input
+        id={`addr-${key}`}
         value={address[key]}
         onChange={(e) => {
           setAddress((a) => ({ ...a, [key]: e.target.value }));
           setAddressErrors((prev) => ({ ...prev, [key]: undefined }));
         }}
-        placeholder={placeholder}
-        className={cn(
-          'w-full px-4 py-3 border rounded outline-none focus:border-brand-gold text-sm',
-          addressErrors[key] ? 'border-brand-maroon' : 'border-brand-cream-dark'
-        )}
+        aria-invalid={addressErrors[key] ? true : undefined}
+        aria-describedby={addressErrors[key] ? `addr-${key}-error` : undefined}
+        className="input-field"
+        {...inputProps}
       />
-      {addressErrors[key] && <p className="text-xs text-brand-maroon mt-1">{addressErrors[key]}</p>}
+      <AnimatePresence initial={false}>
+        {addressErrors[key] && (
+          <motion.p
+            id={`addr-${key}-error`}
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={transition.fast}
+            className="text-xs text-brand-maroon mt-1.5"
+          >
+            {addressErrors[key]}
+          </motion.p>
+        )}
+      </AnimatePresence>
     </div>
   );
 
@@ -336,288 +386,388 @@ export default function CheckoutPage() {
     { id: 'cod' as const, icon: Wallet, title: 'Cash on Delivery', subtitle: 'Pay when you receive', online: false },
   ].filter((m) => !m.online || razorpayEnabled);
 
+  // Step content slides in the direction of travel.
+  const stepVariants = {
+    enter: (d: number) => ({ opacity: 0, x: d * 24 }),
+    center: { opacity: 1, x: 0, transition: transition.slow },
+    exit: (d: number) => ({ opacity: 0, x: d * -24, transition: { duration: 0.15 } }),
+  };
+  const goToStep = (next: number) => {
+    setDirection(next > step ? 1 : -1);
+    setStep(next);
+  };
+
   return (
     <div>
-      <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Cart', href: '/cart' }, { label: 'Checkout' }]} />
+      <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Bag', href: '/cart' }, { label: 'Checkout' }]} />
 
       <div className="container-custom pb-16">
         {/* Stepper */}
-        <div className="flex items-center justify-center gap-2 md:gap-6 mb-10 flex-wrap">
-          {steps.map((s, i) => (
-            <div key={s} className="flex items-center gap-2">
-              <div
-                className={cn(
-                  'w-8 h-8 rounded-full grid place-items-center text-xs font-semibold',
-                  i + 1 < step ? 'bg-green-600 text-white' : i + 1 === step ? 'bg-brand-maroon text-white' : 'bg-brand-cream text-brand-muted'
-                )}
-              >
-                {i + 1 < step ? <Check size={14} /> : i + 1}
-              </div>
-              <span className={cn('text-sm hidden md:block', i + 1 === step ? 'text-brand-maroon font-medium' : 'text-brand-muted')}>{s}</span>
-              {i < steps.length - 1 && <div className="w-8 md:w-16 h-px bg-brand-cream-dark" />}
-            </div>
-          ))}
-        </div>
+        <ol className="relative flex items-start justify-between max-w-2xl mx-auto mb-12" aria-label="Checkout progress">
+          {/* Track + animated fill sit behind the step markers. */}
+          <span className="absolute left-4 right-4 top-4 h-[2px] bg-brand-line" aria-hidden="true" />
+          <motion.span
+            className="absolute left-4 top-4 h-[2px] bg-gradient-to-r from-brand-gold to-brand-maroon origin-left"
+            style={{ right: '1rem' }}
+            initial={false}
+            animate={{ scaleX: (step - 1) / (steps.length - 1) }}
+            transition={transition.slow}
+            aria-hidden="true"
+          />
+          {steps.map((s, i) => {
+            const n = i + 1;
+            const done = n < step;
+            const current = n === step;
+            return (
+              <li key={s} className="relative flex flex-col items-center gap-2" aria-current={current ? 'step' : undefined}>
+                <motion.div
+                  initial={false}
+                  animate={{ scale: current ? 1.1 : 1 }}
+                  transition={transition.base}
+                  className={cn(
+                    'relative z-10 w-8 h-8 rounded-full grid place-items-center text-xs font-semibold ring-4 ring-brand-cream transition-colors duration-slow',
+                    done
+                      ? 'bg-emerald-600 text-white'
+                      : current
+                        ? 'bg-brand-maroon text-white shadow-btn-primary'
+                        : 'bg-white text-brand-muted ring-offset-0 border border-brand-line'
+                  )}
+                >
+                  {done ? <Check size={14} strokeWidth={3} /> : n}
+                </motion.div>
+                <span className={cn('text-xs sm:text-sm transition-colors duration-base', current ? 'text-brand-maroon font-semibold' : 'text-brand-muted')}>
+                  {s}
+                </span>
+              </li>
+            );
+          })}
+        </ol>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
-            {/* Step 1: Login */}
-            {step === 1 && (
-              <div className="bg-white border border-brand-cream-dark rounded-lg p-6 md:p-8">
-                <h2 className="font-display text-2xl text-brand-ink mb-6">Sign in to continue</h2>
-                {/* Orders are tied to an account so they can be tracked and
-                    cancelled later — checkout therefore requires signing in. */}
-                <form onSubmit={handleLogin} className="space-y-4">
-                  <input
-                    type="email"
-                    required
-                    value={credentials.email}
-                    onChange={(e) => setCredentials((c) => ({ ...c, email: e.target.value }))}
-                    placeholder="Email"
-                    className="w-full px-4 py-3 border border-brand-cream-dark rounded outline-none focus:border-brand-gold text-sm"
-                  />
-                  <input
-                    type="password"
-                    required
-                    value={credentials.password}
-                    onChange={(e) => setCredentials((c) => ({ ...c, password: e.target.value }))}
-                    placeholder="Password"
-                    className="w-full px-4 py-3 border border-brand-cream-dark rounded outline-none focus:border-brand-gold text-sm"
-                  />
-                  {loginError && <p className="text-sm text-brand-maroon">{loginError}</p>}
-                  <button type="submit" disabled={login.isPending} className="btn-primary w-full disabled:opacity-60">
-                    {login.isPending ? 'Signing in...' : 'Sign In & Continue'}
-                  </button>
-                  <div className="flex items-center gap-3 text-xs text-brand-muted">
-                    <div className="flex-1 h-px bg-brand-cream-dark" /> OR <div className="flex-1 h-px bg-brand-cream-dark" />
-                  </div>
-                  <Link href="/account/register?redirect=/checkout" className="btn-outline w-full block text-center">
-                    Create an Account
-                  </Link>
-                </form>
-              </div>
-            )}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-10">
+          <div className="lg:col-span-2 overflow-hidden lg:overflow-visible">
+            <AnimatePresence mode="wait" custom={direction} initial={false}>
+              {/* Step 1: Login */}
+              {step === 1 && (
+                <motion.section key="step-1" custom={direction} variants={stepVariants} initial="enter" animate="center" exit="exit" className="surface p-6 md:p-8">
+                  <h2 className="font-display text-3xl text-brand-ink">Sign in to continue</h2>
+                  <p className="text-sm text-brand-muted mt-1.5 mb-6">So you can track, manage and return your order.</p>
+                  {/* Orders are tied to an account so they can be tracked and
+                      cancelled later — checkout therefore requires signing in. */}
+                  <form onSubmit={handleLogin} className="space-y-4">
+                    <div>
+                      <label htmlFor="checkout-email" className="block text-xs font-medium text-brand-ink mb-1.5">Email</label>
+                      <input
+                        id="checkout-email"
+                        type="email"
+                        required
+                        autoComplete="email"
+                        value={credentials.email}
+                        onChange={(e) => setCredentials((c) => ({ ...c, email: e.target.value }))}
+                        className="input-field"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="checkout-password" className="block text-xs font-medium text-brand-ink mb-1.5">Password</label>
+                      <input
+                        id="checkout-password"
+                        type="password"
+                        required
+                        autoComplete="current-password"
+                        value={credentials.password}
+                        onChange={(e) => setCredentials((c) => ({ ...c, password: e.target.value }))}
+                        aria-invalid={loginError ? true : undefined}
+                        className="input-field"
+                      />
+                    </div>
+                    {loginError && <p role="alert" className="text-sm text-brand-maroon">{loginError}</p>}
+                    <Button type="submit" size="lg" fullWidth loading={login.isPending} loadingText="Signing in…">
+                      Sign In &amp; Continue
+                    </Button>
+                    <div className="flex items-center gap-3 text-xs text-brand-muted">
+                      <div className="flex-1 h-px bg-brand-line" /> OR <div className="flex-1 h-px bg-brand-line" />
+                    </div>
+                    <Link href="/account/register?redirect=/checkout" className="btn-outline btn-lg w-full">
+                      Create an Account
+                    </Link>
+                  </form>
+                </motion.section>
+              )}
 
-            {/* Step 2: Address */}
-            {step === 2 && (
-              <div className="bg-white border border-brand-cream-dark rounded-lg p-6 md:p-8">
-                <h2 className="font-display text-2xl text-brand-ink mb-6">Delivery Address</h2>
+              {/* Step 2: Address */}
+              {step === 2 && (
+                <motion.section key="step-2" custom={direction} variants={stepVariants} initial="enter" animate="center" exit="exit" className="surface p-6 md:p-8">
+                  <h2 className="font-display text-3xl text-brand-ink mb-6">Delivery Address</h2>
 
-                {savedAddresses.length > 0 && (
-                  <div className="space-y-3 mb-6">
-                    {savedAddresses.map((a) => (
-                      <label
-                        key={a._id}
-                        className={cn(
-                          'flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition-colors',
-                          selectedAddressId === a._id ? 'border-brand-maroon' : 'border-brand-cream-dark hover:border-brand-maroon'
-                        )}
-                      >
+                  {savedAddresses.length > 0 && (
+                    <div className="space-y-3 mb-6" role="radiogroup" aria-label="Saved addresses">
+                      {savedAddresses.map((a) => (
+                        <label key={a._id} className="choice-card items-start">
+                          <input
+                            type="radio"
+                            name="address"
+                            checked={selectedAddressId === a._id}
+                            onChange={() => setSelectedAddressId(a._id)}
+                            className="sr-only"
+                          />
+                          <span className="mt-0.5"><RadioDot checked={selectedAddressId === a._id} /></span>
+                          <div className="text-sm">
+                            <p className="font-medium">
+                              {a.firstName} {a.lastName}{' '}
+                              {a.isDefault && (
+                                <span className="ml-1 text-[10px] uppercase tracking-wider bg-brand-cream-dark text-brand-gold-ink rounded-full px-2 py-0.5">Default</span>
+                              )}
+                            </p>
+                            <p className="text-xs text-brand-muted mt-1">
+                              {a.line1}{a.line2 ? `, ${a.line2}` : ''}, {a.city}, {a.state} — {a.pincode}
+                            </p>
+                            <p className="text-xs text-brand-muted">{a.phone}</p>
+                          </div>
+                        </label>
+                      ))}
+
+                      <label className="choice-card">
                         <input
                           type="radio"
                           name="address"
-                          checked={selectedAddressId === a._id}
-                          onChange={() => setSelectedAddressId(a._id)}
-                          className="accent-brand-maroon mt-1"
+                          checked={!selectedAddressId}
+                          onChange={() => setSelectedAddressId('')}
+                          className="sr-only"
                         />
-                        <div className="text-sm">
-                          <p className="font-medium">
-                            {a.firstName} {a.lastName}{' '}
-                            {a.isDefault && <span className="text-xs text-brand-muted">(Default)</span>}
-                          </p>
-                          <p className="text-xs text-brand-muted mt-0.5">
-                            {a.line1}{a.line2 ? `, ${a.line2}` : ''}, {a.city}, {a.state} — {a.pincode}
-                          </p>
-                          <p className="text-xs text-brand-muted">{a.phone}</p>
+                        <RadioDot checked={!selectedAddressId} />
+                        <span className="text-sm font-medium">Use a new address</span>
+                      </label>
+                    </div>
+                  )}
+
+                  <AnimatePresence initial={false}>
+                    {!usingSaved && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={transition.slow}
+                        className="overflow-hidden"
+                      >
+                        <div className="grid grid-cols-2 gap-4 p-0.5">
+                          {field('firstName', 'First name', '', { autoComplete: 'given-name' })}
+                          {field('lastName', 'Last name', '', { autoComplete: 'family-name' })}
+                          {field('phone', 'Phone number', 'col-span-2', { type: 'tel', autoComplete: 'tel', inputMode: 'tel' })}
+                          {field('line1', 'House / Flat', 'col-span-2', { autoComplete: 'address-line1' })}
+                          {field('line2', 'Street / Locality (optional)', 'col-span-2', { autoComplete: 'address-line2' })}
+                          {field('city', 'City', '', { autoComplete: 'address-level2' })}
+                          {field('state', 'State', '', { autoComplete: 'address-level1' })}
+                          {field('pincode', 'Pincode', 'col-span-2 sm:col-span-1', { autoComplete: 'postal-code', inputMode: 'numeric', maxLength: 6 })}
+                        </div>
+
+                        <label className="flex items-center gap-2 mt-5 text-sm text-brand-muted cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={saveAddress}
+                            onChange={(e) => setSaveAddress(e.target.checked)}
+                            className="accent-brand-maroon w-4 h-4"
+                          />
+                          Save this address for next time
+                        </label>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  <div className="mt-6 surface-muted p-4 flex items-center gap-3">
+                    <Store className="text-brand-gold-dark flex-none" size={20} strokeWidth={1.75} />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">Prefer to pick up in store?</p>
+                      <p className="text-xs text-brand-muted">Schedule an appointment at your nearest boutique</p>
+                    </div>
+                    <Link href="/store-locator" className="text-sm text-brand-maroon font-medium link-underline flex-none">
+                      Find store
+                    </Link>
+                  </div>
+
+                  <div className="flex justify-end gap-3 mt-8">
+                    <Button size="lg" onClick={handleAddressContinue} className="flex-1 md:flex-none md:px-12">
+                      Continue to Payment
+                    </Button>
+                  </div>
+                </motion.section>
+              )}
+
+              {/* Step 3: Payment */}
+              {step === 3 && (
+                <motion.section key="step-3" custom={direction} variants={stepVariants} initial="enter" animate="center" exit="exit" className="surface p-6 md:p-8">
+                  <h2 className="font-display text-3xl text-brand-ink mb-6">Payment Method</h2>
+
+                  {!razorpayEnabled && (
+                    <p className="text-xs text-brand-muted mb-4 surface-muted p-3">
+                      Online payment is currently unavailable. You can complete this order with Cash on Delivery.
+                    </p>
+                  )}
+
+                  <div className="space-y-3" role="radiogroup" aria-label="Payment method">
+                    {paymentOptions.map((m) => (
+                      <label key={m.id} className="choice-card">
+                        <input
+                          type="radio"
+                          name="payment"
+                          checked={paymentMethod === m.id}
+                          onChange={() => setPaymentMethod(m.id)}
+                          className="sr-only"
+                        />
+                        <RadioDot checked={paymentMethod === m.id} />
+                        <span className="grid h-10 w-10 flex-none place-items-center rounded-full bg-brand-cream ring-1 ring-brand-line">
+                          <m.icon size={19} className="text-brand-gold-dark" strokeWidth={1.75} />
+                        </span>
+                        <div>
+                          <p className="text-sm font-medium">{m.title}</p>
+                          <p className="text-xs text-brand-muted">{m.subtitle}</p>
                         </div>
                       </label>
                     ))}
-
-                    <label className="flex items-center gap-3 p-4 border border-brand-cream-dark rounded-lg cursor-pointer hover:border-brand-maroon transition-colors">
-                      <input
-                        type="radio"
-                        name="address"
-                        checked={!selectedAddressId}
-                        onChange={() => setSelectedAddressId('')}
-                        className="accent-brand-maroon"
-                      />
-                      <span className="text-sm font-medium">Use a new address</span>
-                    </label>
                   </div>
-                )}
 
-                {!usingSaved && (
-                  <>
-                    <div className="grid grid-cols-2 gap-4">
-                      {field('firstName', 'First Name')}
-                      {field('lastName', 'Last Name')}
-                      {field('phone', 'Phone Number', 'col-span-2')}
-                      {field('line1', 'House / Flat', 'col-span-2')}
-                      {field('line2', 'Street / Locality (optional)', 'col-span-2')}
-                      {field('city', 'City')}
-                      {field('state', 'State')}
-                      {field('pincode', 'Pincode', 'col-span-2')}
+                  <div className="flex justify-between gap-3 mt-8">
+                    <Button variant="ghost" size="lg" onClick={() => goToStep(2)}>Back</Button>
+                    <Button size="lg" onClick={() => goToStep(4)} className="flex-1 md:flex-none md:px-12">Review Order</Button>
+                  </div>
+                </motion.section>
+              )}
+
+              {/* Step 4: Review */}
+              {step === 4 && (
+                <motion.section key="step-4" custom={direction} variants={stepVariants} initial="enter" animate="center" exit="exit" className="surface p-6 md:p-8">
+                  <h2 className="font-display text-3xl text-brand-ink mb-6">Review Your Order</h2>
+
+                  <ul className="divide-y divide-brand-line">
+                    {items.map((item) => (
+                      <li key={item.key} className="flex items-center gap-4 py-3 first:pt-0">
+                        <div className="relative w-16 h-16 rounded-control overflow-hidden bg-brand-cream ring-1 ring-brand-line flex-none">
+                          <Image src={item.image} alt="" fill className="object-cover" sizes="64px" />
+                        </div>
+                        <div className="flex-1 min-w-0 text-sm">
+                          <p className="font-medium line-clamp-1">{item.name}</p>
+                          <p className="text-xs text-brand-muted mt-0.5">
+                            Qty {item.quantity}{item.size ? ` · Size ${item.size}` : ''}
+                          </p>
+                        </div>
+                        <p className="text-sm font-semibold tabular-nums">{formatPrice(item.price * item.quantity)}</p>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <div className="grid sm:grid-cols-2 gap-3 mt-6">
+                    <div className="surface-muted p-4 text-sm">
+                      <div className="flex items-center justify-between">
+                        <p className="font-medium text-brand-ink flex items-center gap-2"><MapPin size={15} className="text-brand-gold-dark" /> Delivering to</p>
+                        <button onClick={() => goToStep(2)} className="text-xs font-medium text-brand-maroon link-underline" disabled={placing}>Change</button>
+                      </div>
+                      <p className="text-xs text-brand-muted mt-2 leading-relaxed">
+                        {effectiveAddress.firstName} {effectiveAddress.lastName}, {effectiveAddress.line1}
+                        {effectiveAddress.line2 ? `, ${effectiveAddress.line2}` : ''}, {effectiveAddress.city},{' '}
+                        {effectiveAddress.state} — {effectiveAddress.pincode}
+                      </p>
                     </div>
-
-                    <label className="flex items-center gap-2 mt-4 text-sm text-brand-muted cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={saveAddress}
-                        onChange={(e) => setSaveAddress(e.target.checked)}
-                        className="accent-brand-maroon"
-                      />
-                      Save this address for next time
-                    </label>
-                  </>
-                )}
-
-                <div className="mt-6 p-4 border border-brand-cream-dark rounded-lg flex items-center gap-3">
-                  <Truck className="text-brand-gold-dark" size={20} />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">Or pickup from our store</p>
-                    <p className="text-xs text-brand-muted">Schedule an appointment at your nearest boutique</p>
+                    <div className="surface-muted p-4 text-sm">
+                      <div className="flex items-center justify-between">
+                        <p className="font-medium text-brand-ink flex items-center gap-2"><CreditCard size={15} className="text-brand-gold-dark" /> Paying by</p>
+                        <button onClick={() => goToStep(3)} className="text-xs font-medium text-brand-maroon link-underline" disabled={placing}>Change</button>
+                      </div>
+                      <p className="text-xs text-brand-muted mt-2">
+                        {paymentOptions.find((m) => m.id === paymentMethod)?.title}
+                      </p>
+                      <p className="text-xs text-brand-muted mt-1 flex items-center gap-1.5">
+                        <Truck size={13} /> Estimated delivery: 5–7 business days
+                      </p>
+                    </div>
                   </div>
-                  <Link href="/store-locator" className="text-sm text-brand-maroon font-medium hover:underline">
-                    Find Store
-                  </Link>
-                </div>
 
-                <div className="flex justify-between gap-3 mt-6">
-                  <button onClick={handleAddressContinue} className="btn-primary flex-1 md:flex-none md:px-12 ml-auto">
-                    Save &amp; Continue
-                  </button>
-                </div>
-              </div>
-            )}
+                  <AnimatePresence>
+                    {placeError && (
+                      <motion.p
+                        role="alert"
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        className="text-sm text-brand-maroon mt-5 rounded-control bg-red-50 border border-brand-maroon/20 p-3"
+                      >
+                        {placeError}
+                      </motion.p>
+                    )}
+                  </AnimatePresence>
 
-            {/* Step 3: Payment */}
-            {step === 3 && (
-              <div className="bg-white border border-brand-cream-dark rounded-lg p-6 md:p-8">
-                <h2 className="font-display text-2xl text-brand-ink mb-6">Payment Method</h2>
-
-                {!razorpayEnabled && (
-                  <p className="text-xs text-brand-muted mb-4">
-                    Online payment is currently unavailable. You can complete this order with Cash on Delivery.
-                  </p>
-                )}
-
-                <div className="space-y-3">
-                  {paymentOptions.map((m) => (
-                    <label
-                      key={m.id}
-                      className={cn(
-                        'flex items-center gap-4 p-4 border rounded-lg cursor-pointer transition-colors',
-                        paymentMethod === m.id ? 'border-brand-maroon' : 'border-brand-cream-dark hover:border-brand-maroon'
-                      )}
+                  <div className="flex justify-between gap-3 mt-8">
+                    <Button variant="ghost" size="lg" onClick={() => goToStep(3)} disabled={placing}>Back</Button>
+                    <Button
+                      size="lg"
+                      onClick={handlePlaceOrder}
+                      loading={placing}
+                      loadingText={paymentMethod === 'cod' ? 'Placing order…' : 'Opening payment…'}
+                      className="flex-1 md:flex-none md:px-12"
+                      icon={<Lock size={15} />}
                     >
-                      <input
-                        type="radio"
-                        name="payment"
-                        checked={paymentMethod === m.id}
-                        onChange={() => setPaymentMethod(m.id)}
-                        className="accent-brand-maroon"
-                      />
-                      <m.icon size={22} className="text-brand-gold-dark" />
-                      <div>
-                        <p className="text-sm font-medium">{m.title}</p>
-                        <p className="text-xs text-brand-muted">{m.subtitle}</p>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-
-                <div className="flex justify-between gap-3 mt-6">
-                  <button onClick={() => setStep(2)} className="btn-outline">Back</button>
-                  <button onClick={() => setStep(4)} className="btn-primary flex-1 md:flex-none md:px-12">Review Order</button>
-                </div>
-              </div>
-            )}
-
-            {/* Step 4: Review */}
-            {step === 4 && (
-              <div className="bg-white border border-brand-cream-dark rounded-lg p-6 md:p-8">
-                <h2 className="font-display text-2xl text-brand-ink mb-6">Review Your Order</h2>
-
-                <div className="space-y-3">
-                  {items.map((item) => (
-                    <div key={item.key} className="flex gap-3 pb-3 border-b border-brand-cream-dark last:border-0">
-                      <div className="relative w-16 h-16 rounded overflow-hidden bg-brand-cream flex-none">
-                        <Image src={item.image} alt={item.name} fill className="object-cover" sizes="64px" />
-                      </div>
-                      <div className="flex-1 text-sm">
-                        <p className="font-medium line-clamp-1">{item.name}</p>
-                        <p className="text-xs text-brand-muted">
-                          Qty: {item.quantity}{item.size ? ` · Size ${item.size}` : ''}
-                        </p>
-                      </div>
-                      <p className="text-sm font-medium">{formatPrice(item.price * item.quantity)}</p>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="mt-5 text-sm">
-                  <p className="font-medium text-brand-ink">Delivering to</p>
-                  <p className="text-xs text-brand-muted mt-1">
-                    {effectiveAddress.firstName} {effectiveAddress.lastName}, {effectiveAddress.line1}
-                    {effectiveAddress.line2 ? `, ${effectiveAddress.line2}` : ''}, {effectiveAddress.city},{' '}
-                    {effectiveAddress.state} — {effectiveAddress.pincode}
-                  </p>
-                  <p className="text-xs text-brand-muted mt-2">
-                    Paying by{' '}
-                    <span className="font-medium text-brand-ink">
-                      {paymentOptions.find((m) => m.id === paymentMethod)?.title}
-                    </span>
-                  </p>
-                </div>
-
-                <p className="text-xs text-brand-muted mt-4">Estimated delivery: 5-7 business days</p>
-
-                {placeError && <p role="alert" className="text-sm text-brand-maroon mt-4">{placeError}</p>}
-
-                <div className="flex justify-between gap-3 mt-6">
-                  <button onClick={() => setStep(3)} disabled={placing} className="btn-outline disabled:opacity-50">Back</button>
-                  <button
-                    onClick={handlePlaceOrder}
-                    disabled={placing}
-                    className="btn-primary flex-1 md:flex-none md:px-12 text-center disabled:opacity-60"
-                  >
-                    {placing ? 'Placing order...' : paymentMethod === 'cod' ? 'Place Order' : `Pay ${formatPrice(totals.total)}`}
-                  </button>
-                </div>
-              </div>
-            )}
+                      {paymentMethod === 'cod' ? 'Place Order' : `Pay ${formatPrice(totals.total)}`}
+                    </Button>
+                  </div>
+                </motion.section>
+              )}
+            </AnimatePresence>
           </div>
 
           {/* Summary sidebar */}
-          <aside className="lg:sticky lg:top-32 lg:self-start">
-            <div className="bg-white border border-brand-cream-dark rounded-lg p-6">
-              <h3 className="font-display text-xl mb-4">Order Summary</h3>
-              <div className="space-y-2 text-sm">
+          <aside className="lg:sticky lg:top-36 lg:self-start space-y-4">
+            <div className="surface p-6">
+              <h3 className="font-display text-2xl mb-5">Order Summary</h3>
+
+              <ul className="space-y-3 mb-5 pb-5 border-b border-brand-line max-h-56 overflow-y-auto no-scrollbar">
+                {items.map((item) => (
+                  <li key={item.key} className="flex items-center gap-3">
+                    <div className="relative w-12 h-12 rounded-control overflow-hidden bg-brand-cream ring-1 ring-brand-line flex-none">
+                      <Image src={item.image} alt="" fill className="object-cover" sizes="48px" />
+                      {item.quantity > 1 && (
+                        <span className="absolute -top-1 -right-1 grid h-5 min-w-5 place-items-center rounded-full bg-brand-maroon px-1 text-[10px] font-semibold text-white">
+                          {item.quantity}
+                        </span>
+                      )}
+                    </div>
+                    <p className="flex-1 min-w-0 text-xs text-brand-ink line-clamp-2">{item.name}</p>
+                    <p className="text-xs font-medium tabular-nums">{formatPrice(item.price * item.quantity)}</p>
+                  </li>
+                ))}
+              </ul>
+
+              <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-brand-muted">Items ({items.length})</span>
-                  <span>{formatPrice(totals.subtotal)}</span>
+                  <span className="text-brand-muted">Subtotal ({items.length} {items.length === 1 ? 'item' : 'items'})</span>
+                  <span className="tabular-nums">{formatPrice(totals.subtotal)}</span>
                 </div>
                 {totals.discount > 0 && (
-                  <div className="flex justify-between text-green-700">
+                  <div className="flex justify-between text-emerald-700">
                     <span>Discount{couponCode ? ` (${couponCode})` : ''}</span>
-                    <span>- {formatPrice(totals.discount)}</span>
+                    <span className="tabular-nums">− {formatPrice(totals.discount)}</span>
                   </div>
                 )}
                 <div className="flex justify-between">
                   <span className="text-brand-muted">Shipping</span>
                   {totals.shippingFee === 0
-                    ? <span className="text-green-700">Free</span>
-                    : <span>{formatPrice(totals.shippingFee)}</span>}
+                    ? <span className="text-emerald-700 font-medium">Free</span>
+                    : <span className="tabular-nums">{formatPrice(totals.shippingFee)}</span>}
                 </div>
                 <div className="flex justify-between">
                   <span className="text-brand-muted">Taxes (3%)</span>
-                  <span>{formatPrice(totals.tax)}</span>
+                  <span className="tabular-nums">{formatPrice(totals.tax)}</span>
                 </div>
-                <div className="flex justify-between pt-3 border-t border-brand-cream-dark font-semibold text-base">
-                  <span>Total</span>
-                  <span>{formatPrice(totals.total)}</span>
+                <div className="flex justify-between items-baseline pt-4 border-t border-brand-line">
+                  <span className="font-medium">Total</span>
+                  <span className="font-display text-2xl">{formatPrice(totals.total)}</span>
                 </div>
               </div>
+            </div>
+
+            <div className="surface-muted p-4 space-y-2.5 text-xs text-brand-muted">
+              <p className="flex items-center gap-2"><Lock size={14} className="text-brand-gold-dark" /> Secure checkout{razorpayEnabled ? ' · payments processed by Razorpay' : ''}</p>
+              <p className="flex items-center gap-2"><RotateCcw size={14} className="text-brand-gold-dark" /> 30-day returns on unworn pieces</p>
+              <p className="flex items-center gap-2">
+                <Headphones size={14} className="text-brand-gold-dark" /> Questions? Call{' '}
+                <a href="tel:18002966677" className="text-brand-maroon font-medium link-underline">1800-296-6677</a>
+              </p>
             </div>
           </aside>
         </div>

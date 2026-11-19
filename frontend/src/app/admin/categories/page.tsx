@@ -10,12 +10,14 @@ import {
   useUpdateCategory,
 } from '@/hooks/useAdmin';
 import { resolveImageUrl } from '@/lib/utils';
-import { SectionLoader, ErrorState } from '@/components/common/Loading';
+import { PageHeader, Chip, AdminEmpty, AdminSkeleton, AdminError } from '@/components/admin/ui';
 import ImageUploader from '@/components/admin/ImageUploader';
 import Modal from '@/components/admin/Modal';
 import { Field, Input, Textarea, Toggle, Button, SectionTitle } from '@/components/admin/FormControls';
 import { ApiError } from '@/lib/api';
 import type { Category } from '@/lib/types';
+import { useConfirm } from '@/components/providers/ConfirmProvider';
+import { useToast } from '@/components/providers/ToastProvider';
 
 type CategoryForm = Partial<Category>;
 
@@ -44,6 +46,8 @@ export default function AdminCategoriesPage() {
   const createCategory = useCreateCategory();
   const updateCategory = useUpdateCategory();
   const deleteCategory = useDeleteCategory();
+  const confirm = useConfirm();
+  const toast = useToast();
 
   const categories = useMemo(() => data ?? [], [data]);
   const isSaving = createCategory.isPending || updateCategory.isPending;
@@ -105,66 +109,85 @@ export default function AdminCategoriesPage() {
   };
 
   const handleDelete = async (category: Category) => {
-    if (!window.confirm(`Delete "${category.name}" permanently?`)) return;
-    await deleteCategory.mutateAsync(category._id);
-    refetch();
+    const ok = await confirm({
+      title: `Delete "${category.name}"?`,
+      description:
+        'This category will be permanently removed from the storefront navigation and menus. This cannot be undone.',
+      confirmLabel: 'Delete category',
+    });
+    if (!ok) return;
+    try {
+      await deleteCategory.mutateAsync(category._id);
+      toast.success('Category deleted', { description: category.name });
+      refetch();
+    } catch (err) {
+      toast.error((err as Error).message || 'Could not delete this category.');
+    }
   };
 
-  if (isLoading) return <SectionLoader label="Loading categories…" />;
-  if (error) return <ErrorState description={(error as Error).message} onRetry={() => refetch()} />;
+  if (isLoading) return <AdminSkeleton rows={4} />;
+  if (error) return <AdminError title="Couldn't load categories" message={(error as Error).message} onRetry={() => refetch()} />;
 
   return (
-    <div className="space-y-5">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="font-display text-2xl text-brand-ink">Categories</h2>
-          <p className="text-sm text-brand-muted">
-            {categories.length} categor{categories.length === 1 ? 'y' : 'ies'} · shown in navigation and mega menu
-          </p>
-        </div>
-        <Button onClick={openCreate}>
-          <Plus size={16} /> Add category
-        </Button>
-      </header>
-
-      {categories.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-2xl border border-slate-200 bg-white py-16 text-center">
-          <FolderOpen size={32} className="text-slate-300" />
-          <p className="text-sm text-brand-muted">No categories yet. Add your first one.</p>
+    <div>
+      <PageHeader
+        eyebrow="Catalogue"
+        title="Categories"
+        description={`${categories.length} categor${categories.length === 1 ? 'y' : 'ies'} · shown in navigation and mega menu`}
+        actions={
           <Button onClick={openCreate}>
             <Plus size={16} /> Add category
           </Button>
+        }
+      />
+
+      {categories.length === 0 ? (
+        <div className="rounded-2xl border border-admin-line bg-admin-surface shadow-admin-card">
+          <AdminEmpty
+            icon={FolderOpen}
+            title="No categories yet"
+            description="Categories organise the storefront navigation and mega menu."
+            action={
+              <Button onClick={openCreate}>
+                <Plus size={16} /> Add category
+              </Button>
+            }
+          />
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {categories.map((category) => (
             <div
               key={category._id}
-              className="group overflow-hidden rounded-2xl border border-slate-200 bg-white transition-shadow hover:shadow-md"
+              className="group overflow-hidden rounded-2xl border border-admin-line bg-admin-surface shadow-admin-card transition-[box-shadow,transform,border-color] duration-base ease-premium hover:-translate-y-0.5 hover:border-admin-line-strong hover:shadow-admin-lift"
             >
-              <div className="relative aspect-[4/3] bg-slate-100">
+              <div className="relative aspect-[4/3] overflow-hidden bg-admin-subtle">
                 {category.image && (
                   <Image
                     src={resolveImageUrl(category.image)}
                     alt={category.name}
                     fill
-                    className="object-cover"
+                    className="object-cover transition-transform duration-slow ease-premium group-hover:scale-[1.04]"
                     sizes="(max-width: 640px) 100vw, 25vw"
                     unoptimized
                   />
                 )}
-                <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                <div className="absolute inset-0 bg-gradient-to-t from-[#5a1a1a]/15 via-transparent to-transparent" aria-hidden="true" />
+                <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2 py-0.5 text-[11px] font-semibold tabular-nums text-admin-ink backdrop-blur">
+                  #{category.sortOrder ?? 0}
+                </span>
+                <div className="absolute right-3 top-3 flex gap-1.5 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100">
                   <button
                     onClick={() => openEdit(category)}
                     aria-label={`Edit ${category.name}`}
-                    className="rounded-lg bg-white/90 p-2 text-brand-maroon hover:bg-white"
+                    className="grid h-8 w-8 place-items-center rounded-lg bg-white/95 text-admin-ink shadow-sm backdrop-blur hover:bg-white"
                   >
                     <Edit3 size={14} />
                   </button>
                   <button
                     onClick={() => handleDelete(category)}
                     aria-label={`Delete ${category.name}`}
-                    className="rounded-lg bg-white/90 p-2 text-red-600 hover:bg-white"
+                    className="grid h-8 w-8 place-items-center rounded-lg bg-white/95 text-rose-600 shadow-sm backdrop-blur hover:bg-white"
                   >
                     <Trash2 size={14} />
                   </button>
@@ -173,22 +196,14 @@ export default function AdminCategoriesPage() {
 
               <div className="p-4">
                 <div className="flex items-center gap-2">
-                  {category.icon && <span className="text-brand-gold-dark">{category.icon}</span>}
-                  <p className="font-medium text-brand-ink">{category.name}</p>
+                  {category.icon && <span className="text-admin-gold">{category.icon}</span>}
+                  <p className="truncate font-semibold text-admin-ink">{category.name}</p>
                 </div>
-                <p className="mt-0.5 text-xs text-brand-muted">/{category.slug}</p>
+                <p className="mt-0.5 font-mono text-[11px] text-admin-muted">/{category.slug}</p>
                 <div className="mt-3 flex flex-wrap gap-1.5">
-                  {category.showInNav && (
-                    <span className="rounded-full bg-brand-cream px-2 py-0.5 text-[10px] text-brand-maroon">Nav</span>
-                  )}
-                  {category.showInMegaMenu && (
-                    <span className="rounded-full bg-brand-cream px-2 py-0.5 text-[10px] text-brand-maroon">
-                      Mega menu
-                    </span>
-                  )}
-                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] text-brand-muted">
-                    #{category.sortOrder ?? 0}
-                  </span>
+                  {category.showInNav && <Chip tone="gold">Navigation</Chip>}
+                  {category.showInMegaMenu && <Chip tone="gold">Mega menu</Chip>}
+                  {!category.showInNav && !category.showInMegaMenu && <Chip>Hidden</Chip>}
                 </div>
               </div>
             </div>

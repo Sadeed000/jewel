@@ -19,14 +19,17 @@ export default function UtilityBar() {
     <div className="hidden md:block bg-brand-maroon-dark text-white text-xs">
       <div className="container-custom flex items-center justify-between h-9">
         <div className="flex items-center gap-6">
-          <Link href="/track-order" className="hover:text-brand-gold-light transition-colors">
+          <Link href="/account" className="hover:text-brand-gold-light transition-colors">
             Track Order
           </Link>
-          <Link href="/contact" className="hover:text-brand-gold-light transition-colors">
+          <Link href="/help" className="hover:text-brand-gold-light transition-colors">
             Customer Service
           </Link>
           <Link href="/store-locator" className="hover:text-brand-gold-light transition-colors">
             Find a Store
+          </Link>
+          <Link href="/blog" className="hover:text-brand-gold-light transition-colors">
+            Blog
           </Link>
         </div>
         <div className="flex items-center gap-6">
@@ -60,7 +63,7 @@ export default function UtilityBar() {
                     My Account
                   </Link>
                   <Link
-                    href="/account/orders"
+                    href="/account"
                     className="block px-4 py-2 hover:bg-brand-cream transition-colors"
                     onClick={() => setShowUserMenu(false)}
                   >

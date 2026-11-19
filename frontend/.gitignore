@@ -7,6 +7,8 @@ coverage/
 
 .env*
 !.env.example
+# Public, non-secret production settings (SITE_URL). Keep secrets out of it.
+!.env.production
 
 *.tsbuildinfo
 npm-debug.log*

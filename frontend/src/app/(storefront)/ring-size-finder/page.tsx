@@ -1,12 +1,14 @@
 import type { Metadata } from 'next';
+import { pageMetadata } from '@/lib/seo';
 import Breadcrumb from '@/components/common/Breadcrumb';
 import RingSizer from './RingSizer';
 
-export const metadata: Metadata = {
-  title: 'Ring Size Finder — Measure Your Ring Size at Home',
+export const metadata: Metadata = pageMetadata({
+  title: "Ring Size Finder – Measure Your Ring Size at Home (Indian Sizes)",
   description:
-    'Find your exact Indian ring size at home in under a minute. Measure a ring you already own, or use our conversion chart for Indian, US and UK sizes. Every Aurelia ring includes one free resize.',
-};
+    "Find your Indian ring size at home in under a minute. Measure a ring you own on screen, or use the chart with Indian, US and UK sizes in mm.",
+  path: '/ring-size-finder',
+});
 
 export default function RingSizeFinderPage() {
   return (

@@ -7,34 +7,40 @@ const { parsePagination, paginate } = require('../utils/pagination');
 
 /* ───────────── Stores ───────────── */
 
+// User input goes into RegExp, so metacharacters must be escaped: an
+// unbalanced "(" would otherwise throw (500) and crafted patterns could ReDoS.
+const escapeRegex = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const EARTH_RADIUS_M = 6378100;
+
 const listStores = async (query) => {
   const { page, limit, skip } = parsePagination(query, { limit: 50 });
   const filter = { isActive: true };
 
-  if (query.city) filter.city = new RegExp(`^${query.city}$`, 'i');
+  if (query.city) filter.city = new RegExp(`^${escapeRegex(query.city)}$`, 'i');
   if (query.q) {
-    filter.$or = [
-      { name: new RegExp(query.q, 'i') },
-      { city: new RegExp(query.q, 'i') },
-      { address: new RegExp(query.q, 'i') },
-      { pincode: new RegExp(query.q, 'i') },
-    ];
+    const rx = new RegExp(escapeRegex(query.q), 'i');
+    filter.$or = [{ name: rx }, { city: rx }, { address: rx }, { pincode: rx }];
   }
 
   // Geo-search: ?lng=...&lat=...&radius=meters
+  // `$near` sorts by distance but is not allowed in countDocuments, so the
+  // count uses the equivalent `$geoWithin` circle.
+  const countFilter = { ...filter };
   if (query.lng != null && query.lat != null) {
     const radius = Number(query.radius) || 50000;
+    const coordinates = [Number(query.lng), Number(query.lat)];
     filter.location = {
-      $near: {
-        $geometry: { type: 'Point', coordinates: [Number(query.lng), Number(query.lat)] },
-        $maxDistance: radius,
-      },
+      $near: { $geometry: { type: 'Point', coordinates }, $maxDistance: radius },
+    };
+    countFilter.location = {
+      $geoWithin: { $centerSphere: [coordinates, radius / EARTH_RADIUS_M] },
     };
   }
 
   const [items, total] = await Promise.all([
     Store.find(filter).skip(skip).limit(limit).lean(),
-    Store.countDocuments(filter),
+    Store.countDocuments(countFilter),
   ]);
 
   return paginate({ items, total, page, limit });
